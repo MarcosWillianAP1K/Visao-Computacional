@@ -1,0 +1,784 @@
+--- PAGE 1 ---
+ 
+ 
+MINISTÉRIO  DA  EDUCAÇÃO   UNIVERSIDADE  FEDERAL  DO  PIAUÍ  –  UFPI   CAMPUS  SENADOR  HELVÍDIO  NUNES  DE  BARROS  –  PICOS   
+   
+  
+Curso:  Sistemas  de  Informação   Período:  6°  Ano/Semestre:  2026.2  
+Disciplina:  Tópicos  especiais  em  Visão  Computacional   
+Professor:  José  Denes  Lima  Araújo   
+ 
+ 
+TRABALHO  FINAL  (10,0  PONTOS)    
+ 
+Este  trabalho  tem  como  objetivo  aprofundar  o  conhecimento  e  a  aplicação  das  técnicas  
+de
+ 
+processamento
+ 
+de
+ 
+imagens
+ 
+e
+ 
+visão
+ 
+computacional
+ 
+na
+ 
+solução
+ 
+de
+ 
+problemas
+ 
+significativos
+ 
+em
+ 
+diversas
+ 
+áreas,
+ 
+como
+ 
+a
+ 
+medicina,
+ 
+agricultura,
+ 
+indústria,
+ 
+agropecuária,
+ 
+entre
+ 
+outras.
+ 
+ 
+Para  realizar  o  trabalho,  o  aluno  deverá  escolher  uma  das  duas  modalidades :  
+●
+ 
+Modalidade
+ 
+1
+ 
+—
+ 
+Proposição
+ 
+de
+ 
+um
+ 
+método:
+ 
+escolher
+ 
+um
+ 
+problema
+ 
+e
+ 
+propor
+ 
+uma
+ 
+solução
+ 
+por
+ 
+meio
+ 
+de
+ 
+técnicas
+ 
+de
+ 
+processamento
+ 
+de
+ 
+imagens
+ 
+e
+ 
+visão
+ 
+computacional,
+ 
+escolhendo
+ 
+e
+ 
+utilizando
+ 
+uma
+ 
+base
+ 
+de
+ 
+imagens
+ 
+adequada.
+ 
+●
+ 
+Modalidade
+ 
+2
+ 
+—
+ 
+Reprodução
+ 
+de
+ 
+um
+ 
+artigo
+ 
+científico:
+ 
+escolher
+ 
+um
+ 
+artigo
+ 
+científico
+ 
+que
+ 
+apresente
+ 
+um
+ 
+método
+ 
+de
+ 
+visão
+ 
+computacional
+ 
+aplicado
+ 
+a
+ 
+um
+ 
+problema
+ 
+específico
+ 
+e
+ 
+reproduzir
+ 
+experimentalmente
+ 
+a
+ 
+abordagem
+ 
+proposta
+ 
+pelos
+ 
+autores.
+ (Pode  ser  um  dos  artigos  apresentados  no  trabalho  anterior  
+sobre
+ 
+artigos
+ 
+ou
+ 
+um
+ 
+artigo
+ 
+novo)
+ 
+Em  ambas  as  modalidades,  o  trabalho  deverá  envolver  a  implementação  de  técnicas  de  
+visão
+ 
+computacional,
+ 
+a
+ 
+realização
+ 
+de
+ 
+experimentos
+ 
+e
+ 
+a
+ 
+análise
+ 
+crítica
+ 
+dos
+ 
+resultados
+ 
+obtidos.
+ 
+O  problema  abordado  poderá  envolver  qualquer  aplicação  de  visão  computacional,  
+incluindo
+ 
+tarefas
+ 
+de:
+ 
+●
+ 
+Classificação
+ 
+de
+ 
+imagens;
+ 
+●
+ 
+Segmentação
+ 
+de
+ 
+imagens;
+ 
+
+--- PAGE 2 ---
+●
+ 
+Detecção
+ 
+de
+ 
+objetos;
+ 
+●
+ 
+Ou
+ 
+combinação
+ 
+dessas
+ 
+abordagens.
+ 
+ 
+ETAPAS  DO  TRABALHO  
+1.  Implementação  e  experimentação
+ 
+Modalidade  1  —  Proposição  de  um  método  
+Escolha  um  problema  para  resolver  e  proponha  uma  solução  por  meio  de  
+técnicas  de  processamento  de  imagens  e  visão  computacional.  
+Associado  ao  problema,  deverá  ser  escolhida  uma  base  de  imagens  à  qual  você  
+tenha  acesso,  para  realizar  os  experimentos.  A  base  poderá  ser  pública  ou  de  
+outra  origem,  desde  que  seu  uso  seja  permitido  e  ela  seja  adequada  ao  
+problema  proposto.  
+Implemente  um  método  em  Python  para  resolver  o  problema  escolhido.  
+Poderão  ser  utilizadas  ferramentas  de  processamento  de  imagens  e  visão  
+computacional,  como  OpenCV,  Scikit-Image,  Keras,  TensorFlow,  PyTorch,  entre  
+outras.  
+Modalidade  2  —  Reprodução  de  um  artigo  científico  
+Escolha  um  artigo  científico  que  apresente  um  método  de  visão  computacional  
+aplicado  a  um  problema  específico.  O  artigo  deverá  descrever  suficientemente  
+a  abordagem  e  os  experimentos  para  permitir  uma  tentativa  de  reprodução.  
+Implemente  ou  adapte  o  método  apresentado  no  artigo  e  realize  experimentos  
+para  avaliar  seu  funcionamento.  Sempre  que  possível,  utilize  a  mesma  base  de  
+imagens,  as  mesmas  configurações  experimentais  e  as  mesmas  métricas  
+empregadas  pelos  autores.  
+--- PAGE 3 ---
+Caso  não  seja  possível  reproduzir  integralmente  as  condições  originais,  as  
+adaptações  deverão  ser  justificadas  e  suas  possíveis  implicações  para  os  
+resultados  deverão  ser  discutidas.  
+O  objetivo  não  é  apenas  executar  um  código  pronto,  mas  compreender  a  
+abordagem,  implementar  ou  adaptar  seus  componentes,  realizar  experimentos  
+e  analisar  criticamente  os  resultados  obtidos  em  comparação  com  os  
+apresentados  no  artigo  original.  
+ 
+2.  Documentação  técnico-científica  
+A  documentação  deverá  apresentar  o  problema  abordado,  a  fundamentação  teórica,  a  
+metodologia,  os  experimentos,  os  resultados  e  a  discussão  crítica,  de  acordo  com  a  
+modalidade  escolhida.  
+Modalidade  1  —  Proposição  de  um  método  
+Escreva  um  artigo  científico  de  8  a  12  páginas  sobre  o  método  desenvolvido.  O  
+artigo  deverá  seguir  as  diretrizes  do  formato  SBC,  disponível  em  SBC  
+Publicações  -  Template  para  artigos  e  capítulos  de  livros 
+Recomendo  fortemente  o  uso  de  LaTeX  para  a  elaboração  do  documento,  por  
+meio  de  um  editor  como  o Overleaf.  
+ 
+Modalidade  2  —  Reprodução  de  um  artigo  científico  
+Elabore  um  relatório  técnico-científico  de  8  a  12  páginas ,  seguindo  as  diretrizes  
+de  formatação  da  SBC.  O  relatório  deverá  documentar  o  processo  de  
+reprodução  do  artigo  escolhido,  apresentando:  
+●
+ 
+A
+ 
+identificação
+ 
+do
+ 
+artigo
+ 
+original
+ 
+e
+ 
+a
+ 
+contextualização
+ 
+do
+ 
+problema;
+ 
+●
+ 
+A
+ 
+descrição
+ 
+do
+ 
+método
+ 
+reproduzido
+ 
+e
+ 
+de
+ 
+seus
+ 
+principais
+ 
+componentes;
+ 
+●
+ 
+A
+ 
+base
+ 
+de
+ 
+imagens
+ 
+utilizada
+ 
+e
+ 
+as
+ 
+configurações
+ 
+experimentais;
+ 
+●
+ 
+As
+ 
+adaptações
+ 
+realizadas
+ 
+em
+ 
+relação
+ 
+ao
+ 
+trabalho
+ 
+original,
+ 
+quando
+ 
+houver;  
+●
+ 
+Os
+ 
+resultados
+ 
+obtidos
+ 
+e
+ 
+sua
+ 
+comparação
+ 
+com
+ 
+os
+ 
+resultados
+ 
+reportados
+ 
+pelos  autores;  
+--- PAGE 4 ---
+●
+ 
+Uma
+ 
+discussão
+ 
+crítica
+ 
+sobre
+ 
+a
+ 
+reprodução,
+ 
+incluindo
+ 
+dificuldades
+ 
+encontradas,  limitações  e  possíveis  explicações  para  diferenças  nos  
+resultados.  
+O  relatório  não  deverá  ser  uma  simples  cópia  ou  tradução  do  artigo  original.  Ele  
+deverá  documentar  o  trabalho  efetivamente  realizado  pelo  aluno,  com  análise  
+própria  dos  experimentos  e  dos  resultados.  
+Orientações  para  a  documentação:  
+1.
+ 
+Em
+ 
+anexo
+ 
+(material
+ 
+complementar)
+,
+ 
+há
+ 
+artigos
+ 
+que
+ 
+podem
+ 
+servir
+ 
+como
+ 
+referência  para  a  escrita  científica.  
+2.
+ 
+Em
+ 
+anexo
+ 
+(material
+ 
+complementar)
+,
+ 
+há
+ 
+um
+ 
+documento
+ 
+em
+ 
+PDF
+ 
+que
+ 
+detalha
+ 
+a
+ 
+estrutura  básica  de  um  artigo  científico  e  indica  o  que  pode  ser  descrito  em  
+cada  seção.  Esse  material  também  poderá  auxiliar  na  elaboração  do  relatório  
+técnico-científico.  
+3.
+ 
+É
+ 
+permitido
+ 
+utilizar
+ 
+o
+ 
+ChatGPT
+ 
+como
+ 
+assistente,
+ 
+de
+ 
+maneira
+ 
+semelhante
+ 
+ao
+ 
+Grammarly,  para  melhorar  a  escrita,  a  ortografia,  a  gramática,  a  pontuação,  a  
+clareza  e  o  engajamento  do  texto.  Entretanto,  não  é  permitido  utilizá-lo  para  
+criar  textos  do  zero.  
+3.  Apresentação  dos  resultados  
+Prepare  uma  apresentação  sobre  o  trabalho  realizado,  discutindo  o  problema  
+abordado,  a  metodologia,  a  implementação,  os  experimentos,  a  eficácia  da  abordagem  
+e  os  resultados  obtidos.  
+Utilize  métricas  de  avaliação  adequadas  ao  problema,  como  acurácia,  precisão,  
+sensibilidade,  F1-score  e  Dice,  conforme  a  tarefa  de  visão  computacional  desenvolvida.  
+Na  modalidade  de  proposição  de  um  método ,  a  apresentação  deverá  destacar  as  
+escolhas  realizadas  no  desenvolvimento  da  solução,  seus  diferenciais  e  seu  
+desempenho  experimental.  
+Na  modalidade  de  reprodução  de  um  artigo  científico ,  a  apresentação  deverá  destacar  
+a  abordagem  original,  as  decisões  tomadas  para  reproduzi-la,  as  dificuldades  
+--- PAGE 5 ---
+encontradas  e  a  comparação  entre  os  resultados  obtidos  e  aqueles  reportados  pelos  
+autores.  
+Em  ambas  as  modalidades,  espera-se  uma  análise  crítica  dos  resultados,  incluindo  as  
+limitações  da  abordagem  e  possíveis  melhorias.  
+ 
+INSTRUÇÕES  GERAIS: 
+Esse  trabalho  final  deve  ser  feito  em  grupo  (o  mesmo  grupo  dos  outros  trabalhos).  
+●
+ 
+Todos
+ 
+do
+ 
+grupo
+ 
+devem
+ 
+apresentar.
+ 
+Se
+ 
+um
+ 
+integrante
+ 
+faltar,
+ 
+os
+ 
+demais
+ 
+do
+ 
+grupo
+ 
+devem  apresentar  a  parte  do  integrante  que  faltou.  
+ 
+Entregas:  Apresentação  +  Documentação  técnico-científica  +  Implementação  
+A  documentação  técnico-científica  será  um  artigo  na  modalidade  de  proposição  de  um  
+método  ou  um  relatório  técnico-científico  na  modalidade  de  reprodução  de  um  artigo  
+Tempo  de  apresentação:  Entre  20  e  no  máximo  30  minutos  
+Exclusividade  dos  trabalhos:  Não  será  permitido  que  dois  grupos  apresentem  sobre  o  
+mesmo  problema  e  a  mesma  solução.  Na  modalidade  de  reprodução,  isso  também  
+significa  que  dois  grupos  não  poderão  escolher  o  mesmo  artigo  para  reproduzir.  
+●
+ 
+Foi
+ 
+criada
+ 
+uma
+ 
+planilha
+ 
+para
+ 
+que
+ 
+vocês
+ 
+informem
+ 
+o
+ 
+título,
+ 
+o
+ 
+resumo,
+ 
+a
+ 
+modalidade  escolhida  e  link  para  o  artigo .  Na  modalidade  de  reprodução,  
+deverá  ser  informado  também  o  artigo  escolhido,  com  seu  título  e  link.   
+https://docs.google.com/spreadsheets/d/11xDVuXk3gZCx46O_I6H3Ezq
+b9HwKQZWH/edit?usp=sharing&ouid=117216809533715838631&rtpof
+=true&sd=true 
+●
+ 
+Todos
+ 
+devem
+ 
+assistir
+ 
+às
+ 
+apresentações
+ 
+dos
+ 
+outros
+ 
+grupos:
+ -1,0  ponto para  
+quem  faltar  as  apresentações  de  outro  grupo  sem  justificativa  
+ 
+Datas  de  apresentações  e  entregas :  
+07/12   (segunda)  -   Grupos:  1,  3  e  4  
+10/12  (quinta)  -  Grupos:  5  e   6  
+14/12   (segunda)  -  Grupos:  8  e  9  
+As  apresentações  ocorreram  na  ordem  especificada  acima  e  de  maneira  online. 
+--- PAGE 6 ---
+ 
+Dicas  de  sites  que  disponibilizam  bases  de  imagens  de  acesso  público:  
+https://www.kaggle.com/datasets?tags=13207-Computer+Vision 
+https://universe.roboflow.com/ 
+https://huggingface.co/datasets 
+Ou  qualquer  site  que  disponibilize  as  bases  publicamente.  
+OBS :  Escolha  bases  que  tenham  as  marcações  do  especialista  (labels)  apropriadas  e  
+que  permitam  o  desenvolvimento  do  método  e  a  realização  dos  experimentos   
+ 
+Para  qualquer  dúvida  o  meu  email  é:  jose.denes@ufpi.edu.br 
+ 
+CRITÉRIOS  DE  AVALIAÇÃO 
+A  avaliação  será  composta  por  três  componentes:   
+●
+ 
+Apresentação
+ 
+(avaliação
+ 
+individual):
+ 
+50%
+ 
+da
+ 
+nota;
+ 
+ 
+●
+ 
+Documentação
+ 
+técnico-científica
+ 
+(avaliação
+ 
+em
+ 
+grupo):
+ 
+30%
+ 
+da
+ 
+nota;
+ 
+●
+ 
+Código
+ 
+(Avaliação
+ 
+em
+ 
+grupo):
+ 
+20%
+ 
+da
+ 
+nota;
+ 
+ 
+Os  critérios  a  seguir  serão  usados  para  medir  tanto  a  qualidade  técnica  quanto  a  
+clareza  e  o  envolvimento  dos  membros  na  apresentação  do  trabalho.  
+ 
+1.  Apresentação  (avaliação  individual):  50%  da  nota  
+Foca  na  qualidade  do  trabalho  apresentado  e  no  domínio  individual  do  conteúdo.  
+Critério  de  avaliação  Pontuação  
+Organização,  clareza  e  qualidade  visual  da  apresentação :  slides  bem  
+estruturados,  objetivos,  visualmente  organizados  e  com  boa  sequência  
+lógica  entre  introdução,  metodologia,  resultados  e  conclusão  
+1,5  
+Domínio  do  conteúdo  e  participação  equilibrada:  o  grupo  demonstra  
+conhecimento  sobre  o  método  proposto,  responde  bem  às  perguntas  e  
+distribui  o  tempo  de  apresentação  de  forma  equilibrada  entre  os  
+membros,  sem  sobrecarga  
+1,5  
+--- PAGE 7 ---
+Relevância  e  complexidade  do  trabalho:  importância  e  grau  de  desafio  
+do  problema  abordado,  considerando  a  proposta  metodológica  ou  o  
+esforço  de  reprodução,  a  complexidade  técnica  e  a  qualidade  dos  
+experimentos  realizados.  
+1,5  
+Postura  e  atitude :  demonstra  profissionalismo,  respeito  e  
+comprometimento  ao  longo  de  toda  a  apresentação  
+0,5  
+ 
+2.  Documentação  técnico-científica  (avaliação  em  grupo):  30%  da  nota  
+Foca  na  qualidade,  organização,  clareza  e  rigor  científico  do  artigo  ou  relatório  
+técnico-científico  .  
+Critério  de  avaliação  Pontuação  
+Estrutura  e  organização :  o  documento  segue  uma  estrutura  lógica,  clara  
+e  adequada  ao  formato  científico,  com  figuras  e  tabelas  bem  elaboradas  
+0,75  
+Descrição  metodológica:  apresenta  de  forma  clara  e  detalhada  o  
+método  proposto  ou  reproduzido,  incluindo  as  escolhas  técnicas  e  as  
+configurações  experimentais.  
+0,75  
+Experimentos  e  resultados :  apresenta  experimentos  adequados,  
+métricas  pertinentes  e  análise  dos  resultados;  na  modalidade  de  
+reprodução,  inclui  a  comparação  com  os  resultados  reportados  no  
+artigo  original,  quando  possível.  
+0,75  
+Análise  e  discussão:  apresenta  interpretação  crítica  dos  resultados,  
+limitações  e  possíveis  melhorias;  na  modalidade  de  reprodução,  discute  
+também  as  dificuldades  e  possíveis  causas  de  diferenças  em  relação  ao  
+artigo  original.  
+0,75  
+ 
+ 
+2.  Código  (Avaliação  em  grupo):  20%  da  nota  
+Foca  na  qualidade,  organização  e  clareza  do  código.  
+Critério  de  avaliação  Pontuação  
+--- PAGE 8 ---
+Organização  do  código :  Código  bem  organizado  em  funções  e  de  fácil  
+leitura  
+0,5  
+Qualidade  técnica  da  implementação:  avalia  a  precisão,  eficiência  e  
+funcionalidade  do  método  desenvolvido  
+1,5  
+ 
+Observação:  a  avaliação  considerará  a  modalidade  escolhida.  Não  será  exigido  que  o  
+aluno  que  reproduzir  um  artigo  proponha  um  método  original,  assim  como  não  será  
+exigido  que  o  aluno  que  propuser  um  método  reproduza  integralmente  uma  
+abordagem  já  publicada.  Em  ambas  as  modalidades,  entretanto,  será  necessário  
+demonstrar  compreensão  técnica,  implementação  funcional,  experimentação  
+adequada  e  capacidade  de  analisar  criticamente  os  resultados.  
+ 
+ 

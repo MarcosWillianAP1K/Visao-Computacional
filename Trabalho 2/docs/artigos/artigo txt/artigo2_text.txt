@@ -1,0 +1,467 @@
+
+[--- PAGE 1 ---]
+Vision Transformers com Patches Dinˆamicos para a An´alise de
+Lˆaminas Histol´ogicas
+Vin´ıcius Henrique Giovanini 1, Alexei Manso Correa Machado 1,2
+Departamento de Ciˆencia da Computac ¸˜ao
+Pontif´ıcia Universidade Cat´olica de Minas Gerais (PUC Minas), Belo Horizonte, Brasil
+2Departamento de Anatomia e Imagem - Faculdade de Medicina
+Universidade Federal de Minas Gerais (UFMG), Belo Horizonte, Brasil
+vgiovanini@sga.pucminas.br, alexeimcmachado@gmail.com
+Abstract. This work presents an approach to improve Vision Transformers (ViT)
+by implementing dynamic patch input. Experiments were conducted with diffe-
+rent types of models, performing fine-tuning and exploring multiple strategies to
+identify the most relevant issues related to patch extraction. The proposed ap-
+proach was compared to the traditional ViT model in a study using the Cell
+Recognition and Inspection Center (CRIC) dataset, composed of Pap smear
+images. The results demonstrated that the fine-tuning of the ViT-Small model
+with Grid patch extraction achieved an accuracy of 0.81 while the best dyna-
+mic approach obtained 0.78 of accuracy, due to the excessive overlapping of
+patches.
+Resumo. Este trabalho apresenta uma abordagem para aprimorar os Vision
+Transformers (ViT) por meio da implementac ¸˜ao de captura de patches de ma-
+neira dinˆamica. Foram conduzidos experimentos com diferentes tipos de mode-
+los, realizando ajuste fino (fine-tuning) e explorando m´ultiplas estrat´egias para
+identificar as ´areas mais relevantes na captura de patches. As modificac ¸ ˜oes
+propostas foram comparadas ao modelo tradicional do ViT, aplicando-se essas
+abordagens ao conjunto de dados do Centro de Reconhecimento e Inspec ¸˜ao de
+C´elulas (CRIC), composto por imagens de exames de Papanicolau. Os resul-
+tados demonstraram que o fine-tuning do modelo ViT-Small com extrac ¸ ˜ao de
+patches em Grid alcanc ¸ou uma acur´acia de 0,81. Em contrapartida, a melhor
+abordagem dinˆamica obteve 0,78, devido `a excessiva sobreposic ¸˜ao dos patches.
+1. Introduc ¸˜ao
+O uso de algoritmos de aprendizado de m ´aquina para a an ´alise de imagens de l ˆaminas
+histol´ogicas se intensificou na ´ultima d´ecada, com o desenvolvimento de hardware de alto
+desempenho e dos modelos de aprendizado profundo (deep learning) (DL). Um exemplo
+de aplicac ¸˜ao relevante dessa tecnologia´e no diagn´ostico do cˆancer de colo de ´utero que re-
+presenta um desafio de sa´ude p´ublica no Brasil, com uma incidˆencia anual de 16.000 casos
+e uma taxa de mortalidade de 4,86 casos por 100.000 mulheres [Barcelos et al. 2017]. O
+exame de Papanicolau ´e usado para detectar precocemente a doenc ¸a mediante alterac ¸˜oes
+nas c´elulas que possam indicar les˜oes pr´e-cancer´ıgenas.
+Visando aprimorar a precis ˜ao na identificac ¸˜ao de c ´elulas anormais, soluc ¸˜oes ba-
+seadas em algoritmos de DL mostram-se altamente eficazes. Esses algoritmos permitem
+[--- PAGE 2 ---]
+uma an´alise automatizada em grande escala, extraindo e interpretando padr ˜oes que, em
+uma abordagem tradicional, exigiriam mais tempo para serem realizados.
+Este trabalho se baseia no modelo de Vision Transformer (ViT)
+[Dosovitskiy et al. 2021], uma t ´ecnica de DL recente que tem demonstrado grande
+potencial em comparac ¸˜ao com as Redes Neurais Convolucionais (CNNs). O ViT adapta
+a arquitetura dos Transformers, originalmente desenvolvidos para Processamento de
+Linguagem Natural (NLP), para processar imagens, oferecendo uma nova perspectiva
+para problemas de classificac ¸˜ao. O diagrama da Figura 1 ilustra o fluxo b ´asico de
+entrada e sa ´ıda do Vision Transformer. A imagem de entrada ´e dividida em patches
+fixos, transformados em embeddings lineares. Esses embeddings s˜ao processados pelo
+codificador do Transformer, resultando na sa ´ıda correspondente `a classe prevista para a
+imagem.
+Figura 1. Fluxo de Entrada e Sa´ ıda do Vison Transformer
+A modificac ¸˜ao da arquitetura do ViT [Dosovitskiy et al. 2021] proposta neste tra-
+balho utiliza ajuste fino ( fine-tuning) de diferentes variac ¸˜oes do modelo, a fim de com-
+preender seu impacto na acur ´acia de classificac ¸˜ao entre c ´elulas benignas e malignas. A
+alterac ¸˜ao na estrutura do Transformer envolve ajustar dinamicamente o local de extrac ¸˜ao
+dos patches de entrada. Para isso, s ˜ao apresentadas cinco abordagens: extrac ¸ ˜ao de
+patches baseada em selec ¸˜ao rand ˆomica (SR), rand ˆomico aprimorado (RA), selec ¸˜ao por
+segmentac ¸˜ao (SS), selec ¸˜ao por zigue-zague (ZZ) e selec ¸˜ao por espiral (ES). O objetivo
+principal da selec ¸˜ao dos patches ´e priorizar ´areas que contenham mais c ´elulas e menos
+regi˜ao de fundo. Dessa forma, ´e poss´ıvel avaliar o impacto dessa estrat ´egia em relac ¸˜ao
+aos resultados obtidos a partir do fine-tuning do modelo original com patches fixos. As
+diversas abordagens s˜ao comparadas atrav´es de um estudo de caso contendo imagens de
+exames de Papanicolau.
+2. Trabalhos Relacionados
+[Dodge and Karam 2016] descrevem o efeito adverso de um conjunto de distorc ¸ ˜oes es-
+pectrais na precis˜ao de classificac ¸˜ao de imagens histol ´ogicas, buscando fornecer insights
+sobre a robustez das Redes Neurais Profundas (RNP) nesses cen ´arios. S ˜ao analisados
+efeitos de suavizac ¸˜ao, adic ¸˜ao de ru´ıdo, variac ¸˜oes de contraste e compress˜ao, destacando-
+se a import ˆancia de se tornar o modelo mais robusto a condic ¸˜oes reais. No treinamento,
+foi utilizado o CRIC dataset [Rezende et al. 2021], e os resultados obtidos atrav ´es da
+[--- PAGE 3 ---]
+detecc ¸˜ao de objetos mostram que ´e poss´ıvel auxiliar a identificac ¸˜ao de c ´elulas em ima-
+gens de exames histol´ogicos.
+Os avanc ¸os no uso de t´ecnicas de aprendizado profundo na Citologia s ˜ao exem-
+plificados no projeto DeepCeLL [Fang et al. 2022]. Esse projeto tem como objetivo ana-
+lisar recursos computacionais, com ˆenfase na avaliac ¸˜ao de m ´ultiplos kernels de diferen-
+tes tamanhos. Para isso, prop ˜oe-se um novo modelo de CNN com tr ˆes variantes para
+classificar imagens de citologia cervical. O treinamento do DeepCeLL foi realizado uti-
+lizando dados do Herlev Dataset, adquiridos de um hospital universit ´ario da Dinamarca,
+contendo 917 imagens individuais, al ´em do SIPaKMeD, um dataset com cerca de 4.049
+imagens capturadas de microsc´opio ´optico. Um projeto semelhante, o CerviCell-Detector
+[Kalbhor et al. 2023] prop ˜oe um m ´etodo automatizado de triagem do exame de Papani-
+colau que utiliza redes profundas de detecc ¸˜ao, robustas a mudanc ¸as de saturac ¸˜ao e adic ¸˜ao
+de ru´ıdos.
+Uma combinac ¸˜ao de ViTs e CNNs para a identificac ¸˜ao de tumores na gl ˆandula
+par´otida ´e apresentada por [Dai et al. 2021]. Esse estudo destaca a integrac ¸˜ao de tecnolo-
+gias de aprendizado profundo na medicina, aproveitando as capacidades das CNNs para
+extrair caracter´ısticas de baixo n´ıvel e dos ViTs para capturar relac ¸˜oes n˜ao-locais entre os
+dados. O objetivo ´e aprimorar a precis˜ao na classificac ¸˜ao de imagens m´edicas, superando
+os modelos baseados em CNNs de ´ultima gerac ¸˜ao, com ˆenfase na an ´alise de imagens
+multimodais.
+Os trabalhos de [Chen et al. 2022] e [Steiner et al. 2022] investigam o desempe-
+nho dos ViTs, comparados a outras arquiteturas, como asResNets, com ˆenfase no impacto
+do pr´e-processamento, aumento de dados e regularizac ¸˜ao. O primeiro trabalho examina o
+desempenho dos ViTs sem pr ´e-treinamento ou uso extensivo de aumento de dados, des-
+tacando que esses modelos podem superar ResNets de tamanhos semelhantes sem trans-
+ferˆencia de aprendizado ou com grande n´umero de dados aumentados, especialmente com
+o uso do otimizador Sharpness-Aware Minimizer (SAM). J´a o segundo trabalho analisa
+como t´ecnicas de aumento e regularizac ¸˜ao de dados influenciam o desempenho dos ViTs,
+revelando que a combinac ¸˜ao dessas abordagens pode compensar a necessidade de gran-
+des datasets. Para conjuntos menores, o estudo sugere que o ajuste fino de modelos
+pr´e-treinados em grandes datasets, como o ImageNet-21k, ´e mais eficiente do que o trei-
+namento a partir de pesos aleat´orios. Ambos os estudos ressaltam a importˆancia do ajuste
+adequado do treinamento e do uso de estrat´egias espec´ıficas para otimizar o desempenho
+dos ViTs.
+A t´ecnica Patch Sampling Schedule(PSS) proposta por [McDanel and Ngoc 2023]
+foi desenvolvida para otimizar o tempo de treinamento e aumentar a efici ˆencia dos ViTs.
+O objetivo ´e melhorar a precis ˜ao e a taxa de processamento ao ajustar dinamicamente a
+quantidade e o tamanho dos patches utilizados durante o treinamento. O m ´etodo seleci-
+ona e ajusta o tamanho dos patches baseado nos valores dos pixels ou de forma aleat´oria,
+mas descartando aqueles que correspondem ao fundo, reduzindo a complexidade com-
+putacional sem comprometer o desempenho. De modo similar, o m ´etodo Simple Dyna-
+mic Scanning Augmentation [Kotyan and Vargas 2024] prop˜oe o uso dinˆamico de patches
+para aumentar a robustez dos ViTs, especialmente para resistir a ataques adversariais. A
+t´ecnica utiliza a extrac ¸˜ao adaptativa de patches em diferentes regi ˜oes da imagem, pro-
+pondo quatro algoritmos para identificar ´areas de import ˆancia e distinguir entre fundo e
+[--- PAGE 4 ---]
+objetos. Duas abordagens adotam m ´etodos aleat ´orios: Random Patches (RP) e Random
+Tracing (RT), enquanto as demais s˜ao baseadas em mapas de calor: Salient Patches (SP)
+e Salient Tracing (ST), que buscam regi ˜oes de interesse na imagem. Ru ´ıdos s˜ao adicio-
+nados `a entrada do ViT para analisar seu impacto sobre a classificac ¸˜ao final e a robustez
+do modelo. A an ´alise revela que as abordagens aleat ´orias apresentam maior acur ´acia e
+robustez quando comparadas com o m´etodo original.
+3. Vison Transformers
+O Vision Transformer representa uma abordagem de modelagem capaz de competir
+com as CNNs em v ´arias tarefas de vis ˜ao computacional. Conforme proposto por
+[Dosovitskiy et al. 2021], o ViT divide cada imagem em pequenos patches, que s˜ao pos-
+teriormente convertidos em um vetor de embeddings, de maneira an ´aloga ao tratamento
+de palavras no NLP. Esses embeddings s˜ao complementados com informac ¸˜oes posicio-
+nais, garantindo que a localizac ¸˜ao espacial de cada patch na imagem seja preservada. Em
+seguida, um token de classe ´e adicionado `a sequˆencia de embeddings, permitindo que o
+modelo aprenda uma representac ¸˜ao global da imagem. Essa sequ ˆencia de embeddings ´e
+processada por um codificador composto por m´ultiplos blocos, cada um integrando meca-
+nismos de autoatenc ¸˜ao e PerceptronsMulticamadas (MLP). Dependendo do tamanho do
+modelo, o codificador pode incluir um ou mais desses blocos, projetados para captar as
+relac ¸˜oes entre os diferentes patches da imagem. Ao final, a arquitetura inclui um MLP de
+classificac ¸˜ao, composto por uma ou mais camadas, onde a ´ultima camada ´e respons´avel
+por realizar a previs˜ao da classe final.
+Os patches s˜ao componentes que permitem ao modelo processar imagens de forma
+eficiente. No modelo original, a imagem da entrada ´e dividida em patches n˜ao sobre-
+postos, de tamanho fixo. Por exemplo, uma imagem de 224 ×224 pode ser dividida em
+patches de 16×16 pixels, totalizando 196 patches, como ilustrado na Figura 2a. Cada
+patch ´e, ent˜ao, transformado em um vetor de embedding, que mapeia a matriz do patch
+para uma representac ¸˜ao de menor dimens ˜ao, permitindo que os patches sejam tratados
+de maneira individual, semelhantes a tokens em tarefas de processamento de linguagem
+natural.
+(a) Grid
+ (b) Randˆomico
+ (c) R. Aprimorado
+ (d) Zigue-Zague
+ (e) Espiral
+Figura 2. M ´etodos de Extrac ¸˜ao de Patches
+4. Materiais e M ´etodos
+4.1. Base de Dados
+O conjunto de dados do Centro de Reconhecimento e Inspec ¸ ˜ao de C ´elulas (CRIC)
+´e uma base de dados disponibilizada pela Universidade Federal de Ouro Preto
+[--- PAGE 5 ---]
+[Rezende et al. 2021]. Composta por 400 imagens reais, essa base representa diver-
+sas les ˜oes celulares analisadas por especialistas. Al ´em das imagens, o CRIC inclui
+arquivos em formato CSV e JSON, que fornecem informac ¸ ˜oes detalhadas sobre cada
+n´ucleo, incluindo a localizac ¸˜ao do pixel central e sua classificac ¸˜ao conforme o sistema
+Bethesda. Introduzido em 1988, o sistema Bethesda [Rezende et al. 2021] ´e um m ´etodo
+de classificac ¸˜ao para exames citol´ogicos cervicais, oferecendo uma terminologia padroni-
+zada que auxilia no diagn´ostico, tratamento e acompanhamento de les ˜oes pr´e-cancerosas
+e cancerosas. Este sistema abrange seis categorias de classificac ¸ ˜ao: Atypical squamous
+cells of undetermined signifcance (ASC-US), Atypical squamous cells cannot exclude a
+high-grade lesion (ASC-H), High-grade squamous intraepithelial lesion (HSIL), Low-
+grade squamous intraepithelial lesion (LSIL), Negative for intraepithelial lesion (NFIL),
+e Squamous cell carcinoma (SCC), como ilustrados na Figura 3.
+O dataset do CRIC utilizado no estudo que implementou a CNN com ensemble
+por [N. Diniz et al. 2021] representa uma vers ˜ao alternativa do conjunto de dados atual.
+A principal diferenc ¸a entre a vers˜ao atual e a do ensemble est´a na quantidade de n ´ucleos
+de c ´elulas. O dataset utilizado na pesquisa do CRIC possui uma menor quantidade de
+n´ucleos, o que facilita o balanceamento das classes. Em contrapartida, o dataset atual
+cont´em um n ´umero significativamente maior de n ´ucleos de c´elulas, o que resulta em um
+conjunto mais desbalanceado e, consequentemente, mais desafiador para as tarefas de
+classificac ¸˜ao.
+Figura 3. Exemplos de recorte de c ´elulas com 90×90 pixels
+4.2. Balanceamento de dados
+O conjunto de dados utilizado neste trabalho cont ´em 11.534 n ´ucleos de c ´elulas, apre-
+sentando um desbalanceamento significativo entre as classes: ASC-H com 925 amostras,
+ASC-US com 606, HSIL com 1.703, LSIL com 1.360, NFIL com 6.779 e SCC com
+apenas 161 imagens. Conforme um estudo conduzido pelo Centro de Reconhecimento e
+Inspec ¸˜ao de C ´elulas [N. Diniz et al. 2021], o balanceamento do conjunto de dados ´e es-
+sencial devido ao significativo desequil´ıbrio entre as classes, especialmente a classe SCC.
+Portanto, foi adotada uma abordagem combinada de subamostragem e sobreamostragem,
+uma vez que apenas aumentar os dados n ˜ao era vi ´avel para uma classe com apenas 161
+exemplos. O balanceamento foi obtido por meio da reduc ¸ ˜ao de algumas classes e do
+aumento de outras, visando um conjunto de dados de treino mais equilibrado e represen-
+tativo.
+O balanceamento do conjunto de treino foi realizado usando a biblioteca Albu-
+mentations [Buslaev et al. 2020], que oferece uma variedade de m´etodos de ampliac ¸˜ao de
+dados. O aumento foi aplicado especificamente `as classes SCC e ASC-US, abrangendo
+t´ecnicas como corte aleat´orio, invers˜ao horizontal e rotac ¸˜ao. Quando a rotac ¸˜ao n˜ao corres-
+pondia a um ˆangulo que produziria um complemento apropriado, o algoritmo preenchia a
+[--- PAGE 6 ---]
+´area restante com base no contexto da imagem. Ambas as classes foram aumentadas para
+1.000 amostras. Em contraste, as demais classes passaram por uma reduc ¸ ˜ao no n ´umero
+de amostras, realizada por meio da selec ¸˜ao e remoc ¸˜ao aleat ´oria de um subconjunto dos
+dados. A distribuic ¸˜ao dos dados antes das transformac ¸˜oes pode ser vista na Tabela 1.
+O conjunto de dados foi dividido em 64% para treinamento, 20% para validac ¸˜ao e
+16% para teste. A separac ¸˜ao foi feita com base em pacientes, de modo que cada paciente
+contribuiu com imagens para apenas um dos conjuntos, evitando contaminac ¸˜ao de dados
+entre treino, validac ¸˜ao e teste. A divis˜ao final ´e apresentada na Tabela 1.
+Tabela 1. Quantidade de Imagens antes(A) e depois(D) do balanceamento
+Divis˜ao ASC-H ASC-US HSIL LSIL NFIL SCC
+Treino (A/D) 592/1000 388/1000 1.090/1000 871/1000 4.339/1000 103/1000
+Validac ¸˜ao 185 122 341 272 1.356 33
+Teste 148 96 272 217 1.084 25
+4.3. Metodologia
+O conceito de patches dinˆamicos envolve explorar a sobreposic ¸˜ao controlada de pat-
+ches [Kotyan and Vargas 2024], focando na extrac ¸˜ao de ´areas de interesse e evitando
+regi˜oes de fundo. Este trabalho prop ˜oe cinco m ´etodos de extrac ¸˜ao: selec ¸˜ao rand ˆomica
+(SR), randˆomica aprimorada (RA), segmentac ¸˜ao (SS), zigue-zague (ZZ) e espiral (ES). A
+SR seleciona patches aleatoriamente, enquanto a RA reduz sobreposic ¸˜oes. A SS utiliza
+m´ascaras de segmentac ¸˜ao, a ZZ segue um percurso alternado, e a ES organiza os patches
+em espiral.
+Inicialmente, este estudo foca na an ´alise e selec ¸˜ao do melhor modelo sem
+modificac ¸˜oes de ViT, visando otimizar a acur´acia mediante fine-tuning utilizando o con-
+junto de dados do CRIC. Para isso, s ˜ao explorados modelos pr ´e-treinados, nas vari-
+antes Tiny, Small e Base, que operam com patches 16×16, e foram pr ´e-treinados na
+base de dados ImageNet-21k. Essas arquiteturas s ˜ao utilizadas como ponto de par-
+tida para um modelo derivado que modifica a camada de extrac ¸ ˜ao de patches. Em
+[Dosovitskiy et al. 2021], ´e proposto que a entrada para o ViT seja a pr ´opria imagem,
+que ´e dividida em patches diretamente, atrav ´es da projec ¸˜ao linear. Por ´em, no mo-
+delo pr´e-treinado disponibilizado pelo Hugging Face, inspirado no m ´etodo proposto por
+[Wu et al. 2020], a extrac ¸˜ao dos patches ´e realizada por meio de uma camada convolu-
+cional ( Conv2D), um m ´etodo denominado projec ¸˜ao convolucional. Isso significa que,
+ao inv´es de utilizar a imagem diretamente, o modelo trabalha com um mapa de carac-
+ter´ısticas. No presente estudo, foi implementado o fine-tuning desse modelo pr´e-treinado
+com a projec ¸˜ao convolucional sem modificac ¸˜oes e os resultados foram comparados com
+as cinco abordagens din ˆamicas. Esses m ´etodos t ˆem como objetivo explorar diferentes
+formas de entrada, sendo a pr ´opria imagem utilizando projec ¸˜ao linear e tamb ´em com a
+extrac ¸˜ao de patches via projec ¸˜ao convolucional.
+Para o desenvolvimento do m´etodo de extrac ¸˜ao de patches por aleatoriedade (SR),
+´e proposto o conceito de centros, em que a extrac ¸˜ao de patches ´e baseada em uma lista
+de tuplas que contˆem as coordenadas x e y centrais de cada patch. Essa lista ´e retornada
+pelo m´etodo de extrac ¸˜ao para a classe personalizada de patch-embeddings. Considerando
+[--- PAGE 7 ---]
+uma imagem de 224 ×224 pixels, com patches de 16×16 pixels, tamanho usado consis-
+tentemente em todos os testes, o m ´etodo resulta em um total de 196 patches. O objetivo
+da extrac ¸˜ao din ˆamica rand ˆomica ´e selecionar aleatoriamente 196 posic ¸˜oes centrais para
+os patches, sem qualquer restric ¸˜ao de localizac ¸˜ao. Esse processo est ´a ilustrado na Figura
+2b.
+A implementac ¸˜ao do m´etodo denominado rand ˆomico aprimorado (RA) baseia-se
+na selec ¸˜ao aleat ´oria de pontos centrais, mas com uma t ´ecnica para evitar sobreposic ¸˜oes.
+Quando um centro ´e escolhido, ele ´e verificado para se garantir que n˜ao esteja dentro dos
+pixels adjacentes de outro centro j ´a existente. Assim, a posic ¸˜ao central selecionada n ˜ao
+poder´a estar dentro de outropatch quando adicionada `a lista final de centros. Dessa forma,
+cada novo ponto ´e colocado em uma regi ˜ao n˜ao extra´ıda da imagem, como ilustrado na
+Figura 2c.
+O desenvolvimento dos m ´etodos Zigue-Zague (ZZ) e Espiral (ES) foi motivado
+pela ideia de se extra ´ırem sequ ˆencias de patches adjacentes, evitando saltos como nos
+m´etodos de grid (entre uma linha e a pr ´oxima) e rand ˆomico (saltos entre cada patch e
+o seguinte). O m ´etodo ZZ, como ilustrado na Figura 2d, segue um trac ¸ado em zigue-
+zague, explorando a sobreposic ¸˜ao de patches de maneira controlada. Por outro lado, o
+m´etodo ES organiza os patches em um padr ˜ao espiralado, iniciando a partir do centro
+da imagem, regi˜ao onde, por convenc ¸˜ao, encontra-se o n ´ucleo da c´elula e expandindo-se
+progressivamente para a periferia. Dessa forma, o m´etodo apresenta alta sobreposic ¸˜ao de
+patches na regi˜ao central, que vai diminuindo `a medida que a espiral se expande, como
+demonstrado na Figura 2e.
+O m ´etodo de extrac ¸˜ao por segmentac ¸˜ao (SS) identifica as ´areas de interesse da
+imagem, adotando o GrabCut para gerar uma m ´ascara da imagem. Essa m ´ascara revela
+as regi˜oes de maior relev ˆancia, onde os patches s˜ao extra´ıdos seguindo o stride definido
+pelo seu pr ´oprio tamanho. Assim, os centros s ˜ao obtidos somente em pixels brancos da
+m´ascara, garantindo a captura m´axima de informac ¸˜oes e detalhes. Para os patches rema-
+nescentes, a selec ¸˜ao ocorre de forma aleat´oria dentro da zona de interesse demarcada pela
+m´ascara de segmentac ¸˜ao, considerando que esses patches ser˜ao completamente sobre-
+postos, como ilustrado na Figura 4. A qualidade da segmentac ¸˜ao desempenha um papel
+crucial nesse m´etodo. O GrabCut foi utilizado com seus par ˆametros default, o que pode
+resultar ocasionalmente em falhas de segmentac ¸˜ao, gerando m ´ascaras totalmente vazias.
+Para esses casos, uma excec ¸˜ao foi implementada, e se a segmentac ¸˜ao cobrir menos de
+10% da imagem, a extrac ¸˜ao de patches ser´a feita de forma linear convencional.
+(a) Original
+ (b) Recorte
+ (c) M´ascara
+ (d) Patches
+Figura 4. Sequ ˆencia usada para a segmentac ¸˜ao e extrac ¸˜ao de patches atrav´es do GrabCut
+[--- PAGE 8 ---]
+5. Resultados Experimentais
+O fine-tuning dos modelos foi conduzido em um computador local com uma GPU RTX
+2060 (6 GB), processador Ryzen 5 3600x e 32 GB de RAM. Essa configurac ¸ ˜ao foi su-
+ficiente para processar modelos de menor complexidade, como o Tiny e o Small. No
+entanto, devido `a maior demanda computacional do modelo Base, n ˜ao foi poss´ıvel pro-
+cess´a-lo localmente com as camadas descongeladas do MLP do codificador. Para contor-
+nar essa limitac ¸˜ao, foi utilizada uma assinatura Colab PRO, que oferece acesso a recursos
+de computac ¸˜ao em nuvem. No Colab PRO, o treinamento foi realizado em uma GPU T4
+com 15 GB e 13 GB de RAM.
+Ao se definir o modelo de baseline, foram testadas diversas arquiteturas e hiper-
+parˆametros. Um dos experimentos treinou os MLPs dos blocos 10 e 11 do codificador,
+adicionando tr ˆes camadas lineares ao MLP do classificador e congelando o restante da
+arquitetura. Com um conjunto balanceado de 1.000 amostras por classe, taxa de aprendi-
+zado de 1e-4 e batch de 16, o modelo Small apresentou boa adaptac ¸˜ao ao treino, mas di-
+ficuldades na generalizac ¸˜ao, com oscilac ¸˜oes significativas na validac ¸˜ao (Figura 5a). Para
+mitigar esse problema, reduziu-se a taxa para 1e-5 e substitu´ıram-se as trˆes camadas line-
+ares do classificador por uma ´unica, resultando em leve estabilidade na validac ¸˜ao (Figura
+5b), mas com overfitting ainda presente. J ´a o modelo Tiny, devido `a sua arquitetura sim-
+plificada, teve dificuldades na extrac ¸˜ao de caracter ´ısticas das c ´elulas, prejudicando sua
+convergˆencia.
+Figura 5. Acur ´acia do modelo Small para diferentes taxa de aprendizado
+Para a definic ¸˜ao do baseline de comparac ¸˜ao, os modelos Base e Small foram iden-
+tificados como os melhores candidatos. As taxas de aprendizado de 1e-4 e 1e-5 demons-
+traram ser as mais adequadas, sendo escolhido 1e-5, utilizando um tamanho de batch
+de 32, para todos os testes, enquanto a regularizac ¸ ˜ao com weight decay n˜ao apresen-
+tou impacto significativo e, por isso, foi descartada. No fine-tuning do modelo ViT-Small,
+optou-se por descongelar mais blocos do codificador, que possui um total de 12. Foram li-
+berados os dois primeiros blocos e os trˆes ´ultimos, resultando em uma acur´acia de 0,81 no
+conjunto de validac ¸˜ao e 0,79 no conjunto de teste, como mostrado na Figura 6. Ao realizar
+o fine-tuning com o modelo ViT-Base, n˜ao foi poss´ıvel replicar a mesma configurac ¸˜ao de
+descongelamento do modelo Small devido `a alta complexidade do modelo. Dessa forma,
+para o fine-tuning do modelo ViT-Base, apenas o ´ultimo MLP do ´ultimo bloco de codifi-
+cador foi descongelado. Como ilustrado na Figura 7, essa abordagem resultou em uma
+acur´acia de 0,76 nos dados de validac ¸˜ao e 0,75 nos dados de teste.
+No treinamento dos modelos com extrac ¸˜ao dinˆamica, foram utilizadas as mesmas
+arquiteturas dos modelos Small e Base, ambos configurados com tamanho de batch de
+[--- PAGE 9 ---]
+Figura 6. Gr ´afico de Acur´acia e Matriz de Confus˜ao - Modelo Small
+Figura 7. Gr ´afico de Acur´acia e Matriz de Confus˜ao - Modelo Base
+32 e taxa de aprendizado de 1e-5. Para os testes com o modelo Small, foram aplicadas
+tanto a projec ¸˜ao linear quanto a convolucional em todas as cinco abordagens din ˆamicas,
+totalizando 10 experimentos, cujos resultados de acur´acia final s˜ao apresentados na Tabela
+2. No caso do modelo Base, devido `a sua maior complexidade, os testes foram limitados
+`as abordagens din ˆamicas com projec ¸˜ao linear, totalizando 5 experimentos, ilustrados na
+Figura 8.
+Figura 8. Fluxo de Testes: Modelos Sem Modificac ¸˜oes vs. Modificados
+Analisando-se os resultados obtidos a partir do fine-tuning dos modelos Small e
+Base do ViT, sem modificac ¸˜oes, em comparac ¸˜ao com os resultados da abordagem de en-
+semble de CNNs proposta por [N. Diniz et al. 2021], observa-se que os modelos ViT n˜ao
+atingiram a mesma acur´acia obtida pela CNN com ensemble. Enquanto a CNN alcanc ¸ou
+uma acur´acia de 0,95, o modeloViT Smallobteve apenas 0,81. Esse desempenho pode ser
+atribu´ıdo `a arquitetura do ViT, que tende a exigir uma quantidade significativa de dados
+para atingir seu potencial m´aximo. Com uma arquitetura robusta, mas sem o volume ideal
+de dados, os modelos mais simples, como o Small, demonstraram desempenho superior
+[--- PAGE 10 ---]
+em comparac ¸˜ao com modelos mais complexos, como o Base.
+O fine-tuning realizado para se compararem os modelos Small e Base sem
+modificac ¸˜ao com os de extrac ¸˜ao dinˆamica utilizando projec ¸˜ao linear, conforme ilustrado
+na Figura 8, mostrou que a aplicac ¸˜ao da extrac ¸˜ao de patches impactou a acur´acia e a perda
+no modelo Base, como pode ser analisado na Tabela 2. No entanto, esses impactos foram
+menores no modelo Small, ainda que nenhum dos m´etodos com patches dinˆamicos tenha
+superado o modelo sem modificac ¸˜ao no qual utiliza-se a t´ecnica convolucional.
+Os testes de extrac ¸˜ao dinˆamica com operac ¸˜ao convolucional foram realizados so-
+mente no modelo Small, como pode ser analisado no fluxo de teste na Figura 8. Compa-
+rado com a extrac ¸˜ao dinˆamica baseada em projec ¸˜ao linear, a abordagem convolucional de-
+monstrou uma melhora na acur´acia no conjunto de testes para as cinco t´ecnicas dinˆamicas.
+Esse ganho pode ser atribu´ıdo `a pr ´opria convoluc ¸˜ao, que realiza uma extrac ¸˜ao inicial de
+caracter´ısticas e preserva as relac ¸˜oes espaciais, aumentando o poder de converg ˆencia do
+modelo. Entretanto, ao se comparar a abordagem dinˆamica convolucional com a extrac ¸˜ao
+por Grid, que tamb´em utiliza a convoluc ¸˜ao, observou-se que nenhuma das cinco t´ecnicas
+dinˆamicas superou o desempenho da extrac ¸˜ao de patchs por Grid, como demonstrado na
+Figura 2a. Isso pode ser explicado pelas caracter ´ısticas do conjunto de dados, onde as
+´areas de interesse s˜ao relativamente pequenas e n˜ao favorecem a extrac ¸˜ao dinˆamica.
+No modelo Small com projec ¸˜ao linear, as abordagens RA e SS tiveram resultados
+quase idˆenticos, com leve vantagem para SS. J´a com projec ¸˜ao convolucional, a abordagem
+ES obteve a melhor acur ´acia (0,78), como mostrado na Tabela 2. Esse desempenho se
+deve `a combinac ¸˜ao da projec ¸˜ao convolucional com a extrac ¸˜ao em espiral. O modelo Base
+teve desempenho inferior ao Small em todas as metodologias dinˆamicas, devido `a menor
+robustez do modelo.
+A sobreposic ¸˜ao de patches desempenhou um papel fundamental no desempenho
+do modelo para o conjunto de dados usado neste estudo. Entre os m ´etodos dinˆamicos, a
+abordagem de Selec ¸˜ao por Espiral (ES) com projec ¸˜ao convolucional apresentou a acur´acia
+mais pr ´oxima da extrac ¸˜ao por Grid, sendo a mais eficaz entre os testes propostos. Isso
+ocorre porque, neste conjunto de dados, onde a´area de interesse ´e pequena e a quantidade
+de patches gerados para cada imagem ´e grande, a sobreposic ¸˜ao ´e bastante elevada. Nos
+m´etodos como o zigue-zague, essa sobreposic ¸˜ao acontece principalmente na gerac ¸˜ao de
+patches ao longo das diagonais. J ´a no m´etodo de espiral, a extrac ¸˜ao comec ¸a pelo centro
+da imagem, onde est ´a o n ´ucleo da c´elula, uma regi˜ao de alta sobreposic ¸˜ao, e se expande
+progressivamente para ´areas menos relevantes, capturando melhor as caracter ´ısticas es-
+senciais do objeto de interesse.
+Tabela 2. Resultados finais de acur´acia para a extrac ¸˜ao de patches dinˆamicos
+ViT Projec ¸ ˜ao Selec ¸˜ao
+Randˆomica
+Randˆomica
+Aprimorada
+Selec ¸˜ao por
+Segmentac ¸˜ao
+Zigue
+Zague Espiral
+Base Linear 0,70 0,65 0,60 0,67 0,67
+Small Linear 0,64 0,70 0,71 0,68 0,69
+Small Conv2d 0,75 0,77 0,76 0,76 0,78
+[--- PAGE 11 ---]
+6. Discuss ˜ao
+Com base nos resultados obtidos, pode-se inferir que o fine-tuning do modelo de Vi-
+sion Transformer sem modificac ¸˜ao, que incorpora a extrac ¸˜ao de patches via convoluc ¸˜ao
+(Conv2d), demonstrou-se otimizado e eficaz na captura de caracter´ısticas iniciais da ima-
+gem. Nenhuma abordagem com projec ¸ ˜ao linear com extrac ¸˜ao din ˆamica superou o de-
+sempenho da extrac ¸˜ao baseada em convoluc ¸˜ao. Nos testes com extrac ¸˜ao dinˆamica apli-
+cando convoluc ¸˜ao, observou-se uma melhora em comparac ¸˜ao ao m ´etodo dinˆamico com
+projec ¸˜ao linear. Entretanto, a sobreposic ¸˜ao excessiva de patches impediu que as aborda-
+gens dinˆamicas superassem o modelo sem alterac ¸˜oes.
+Em relac ¸˜ao `a arquitetura dos Vision Transformers, observou-se que, para este con-
+junto de dados, quanto mais camadas s˜ao treinadas, maiores s˜ao as chances de se alcanc ¸ar
+uma acur´acia elevada e uma perda (loss) menor. Esse resultado evidencia o forte impacto
+do conjunto de dados na acur ´acia, e que o desbalanceamento dos dados afeta significati-
+vamente a qualidade do treinamento. O ViT, mesmo com fine-tuning, ´e um modelo que
+demanda uma grande quantidade de dados para alcanc ¸ar seu potencial.
+Ao se analisar a implementac ¸˜ao dos patches dinˆamicos, observa-se que, para este
+conjunto de dados em que o objeto de interesse ocupa uma´area pequena da imagem, essa
+abordagem n˜ao supera a efic´acia do modelo sem modificac ¸˜oes, em grande parte devido `a
+sobreposic ¸˜ao excessiva de patches. No entanto, ´e poss´ıvel que um modelo mais robusto
+que o Small, aliado a uma extrac ¸˜ao dinˆamica com sobreposic ¸˜oes controladas e utilizando
+convoluc ¸˜ao, possa superar o m ´etodo convencional. Essa abordagem exigiria um maior
+poder computacional para realizar o fine-tuning de um modelo com mais parˆametros.
+Apesar das contribuic ¸˜oes apresentadas, diversos aspectos do problema ainda me-
+recem investigac ¸˜ao, o que abre caminho para futuros trabalhos. A melhoria no balan-
+ceamento dos dados se mostra uma estrat ´egia eficaz para aprimorar os testes realizados,
+incluindo abordagens com problemas bin ´arios e com tr ˆes classes, como demonstrado no
+estudo [N. Diniz et al. 2021]. Al ´em disso, o uso de redes generativas para o aumento
+de dados da classe SCC, que possui uma quantidade baixa de amostras, pode ser uma
+alternativa promissora para melhorar o desempenho do modelo.
+Outro ponto a ser explorado ´e o treinamento com mais camadas de codificadores
+descongeladas no modelo Base. Nos dois hardwares utilizados neste projeto, houve
+limitac ¸˜oes quanto ao treinamento mais extenso do modelo Base. Assim, ao realizar o
+fine-tuning do modelo com um conjunto maior de par ˆametros trein´aveis, ´e poss´ıvel obter
+um desempenho superior.
+Agradecimentos — AMC Machado agradece o aux ´ılio financeiro do Fundo de In-
+centivo `a Pesquisa FIP-PUCMinas 2025/32467 e da FAPEMIG atrav ´es dos projetos
+APQ-02753-24 e APQ-06556-24.
+Referˆencias
+Barcelos, M. R. B., Lima, R. d. C. D., Tomasi, E., Nunes, B. P., Duro, S. M. S., and Fac-
+chini, L. A. (2017). Quality of cervical cancer screening in brazil: external assessment
+of the pmaq. REV SAUDE PUBL, 51:67.
+[--- PAGE 12 ---]
+Buslaev, A., Iglovikov, V . I., Khvedchenya, E., Parinov, A., Druzhinin, M., and Kalinin,
+A. A. (2020). Albumentations: Fast and flexible image augmentations. Information,
+11(2).
+Chen, X., Hsieh, C.-J., and Gong, B. (2022). When vision transformers outperform res-
+nets without pretraining or strong data augmentations. ArXiv, abs/2106.01548.
+Dai, Y ., Gao, Y ., and Liu, F. (2021). Transmed: Transformers advance multi-modal me-
+dical image classification. Diagnostics, 11(8).
+Dodge, S. and Karam, L. (2016). Understanding how image quality affects deep neural
+networks. In 2016 Eighth International Conference on Quality of Multimedia Experi-
+ence (QoMEX), pages 1–6.
+Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T.,
+Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., and Houlsby, N.
+(2021). An image is worth 16x16 words: Transformers for image recognition at scale.
+ArXiv, abs/2010.11929.
+Fang, M., Lei, X., Liao, B., and Wu, F.-X. (2022). A deep neural network for cervical cell
+classification based on cytology images. IEEE Access, 10:130968–130980.
+Kalbhor, M., Shinde, S., Wajire, P., and Jude, H. (2023). Cervicell-detector: An object
+detection approach for identifying the cancerous cells in pap smear images of cervical
+cancer. Heliyon, 9(11):e22324.
+Kotyan, S. and Vargas, D. V . (2024). Improving robustness for vision transformer with a
+simple dynamic scanning augmentation. Neurocomputing, 565:127000.
+McDanel, B. and Ngoc, C. P. (2023). Dynamic patch sampling for efficient training and
+dynamic inference in vision transformers. In International Conference on Machine
+Learning and Applications, pages 83–9.
+N. Diniz, D., T. Rezende, M., G. C. Bianchi, A., M. Carneiro, C., J. S. Luz, E., J. P. Mo-
+reira, G., M. Ushizima, D., N. S. de Medeiros, F., and J. F. Souza, M. (2021). A deep
+learning ensemble method to assist cytopathologists in pap test image classification. J
+IMAGING SCI, 7(7).
+Rezende, M. T., Silva, R., Bernardo, F. d. O., Tobias, A. H. G., Oliveira, P. H. C., Ma-
+chado, T. M., Costa, C. S., Medeiros, F. N. S., Ushizima, D. M., Carneiro, C. M., and
+Bianchi, A. G. C. (2021). Cric searchable image database as a public platform for
+conventional pap smear cytology data. Scientific Data, 8(1):151.
+Steiner, A. P., Kolesnikov, A., Zhai, X., Wightman, R., Uszkoreit, J., and Beyer, L. (2022).
+How to train your vit? data, augmentation, and regularization in vision transformers.
+Trans. Mach. Learn. Res., 2022.
+Wu, B., Xu, C., Dai, X., Wan, A., Zhang, P., Tomizuka, M., Keutzer, K., and Vajda,
+P. (2020). Visual transformers: Token-based image representation and processing for
+computer vision. ArXiv, abs/2006.03677.

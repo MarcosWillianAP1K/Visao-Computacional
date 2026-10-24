@@ -1,0 +1,510 @@
+--- PAGE 1 ---
+A Study on Class Activation Map Methods to Detect Masses in
+Mammography Images using Weakly Supervised Learning
+Vicente Sampaio1, Filipe R. Cordeiro 1
+1Visual Computing Lab, Department of Computing
+Universidade Federal Rural de Pernambuco, Recife, Brazil
+vicentegalencar@gmail.com, filipe.rolim@ufrpe.br
+Abstract. In the last years, weakly supervised models have aided in the mass
+detection using mammography images, decreasing the need for pixel-level an-
+notations. Most of the models in literature are based on CAM activation maps,
+not exploring the use of other activation methods for detection in mammography
+images. This works presents a study of different state-of-the-art activation maps
+methods, applied to weakly supervised training in mammography images. In
+this study, we compare the methods CAM, GradCAM, GradCAM++, XGrad-
+CAM and LayerCAM, using the GMIC model to detect the presence of mass in
+mammography images. The evaluation is done using the dataset VinDr-Mammo,
+using the metrics Accuracy, TPR, FNR and FPPI. Results show that the use of
+different strategies of activation maps during training and test stages lead to
+an improvement of the model. With this strategy, we improve the results of the
+GMIC method, decreasing the FPPI value and increasing TPR.
+Resumo. Nos ´ultimos anos, modelos de aprendizado fracamente supervisio-
+nado t ˆem auxiliado na detecc ¸˜ao de les ˜oes em imagens de mamografia, dimi-
+nuindo a necessidade de anotac ¸˜oes de pixels na imagem. A maioria dos modelos
+na literatura se baseia no uso de mapas de ativac ¸˜ao CAM, n˜ao sendo explorado
+o uso de outros modelos de ativac ¸˜ao para detecc ¸˜ao em imagens de mamografia.
+Este trabalho apresenta um estudo do uso de diferentes m ´etodos de mapas de
+ativac ¸˜ao do estado da arte, aplicados para treinamento fracamente supervisio-
+nado em imagens de mamografia. Neste estudo, comparamos os m´etodos CAM,
+GradCAM, GradCAM++, XGradCAM e LayerCAM, utilizando a rede GMIC
+para detectar a presenc ¸a de les˜oes em imagens de mamografia. A avaliac ¸˜ao ´e
+feita utilizando a base VinDr-Mammo, utilizando as m´etricas de Acur´acia, TPR,
+FNR e FPPI. Resultados mostram que o uso de diferentes estrat´egias de mapas
+de ativac ¸˜ao nas etapas de treino e teste melhoram o resultado do modelo. Com
+isso, melhoramos os resultados do m´etodo GMIC, reduzindo o valor de FPPI e
+aumentando o valor de TPR.
+1. Introduc ¸˜ao
+O c ˆancer de mama ´e o tipo mais frequente de c ˆancer entre mulheres no mundo todo,
+sendo respons´avel pelo maior n´umero de mortes relacionadas ao cˆancer no sexo feminino,
+correspondendo a cerca de 15.5% dos ´obitos por cˆancer [1]. A detecc ¸˜ao precoce tem um
+impacto importante no sucesso do tratamento do tumor, uma vez que o tratamento torna-se
+mais dif´ıcil em est´agios avanc ¸ados [2]. No entanto, a interpretac ¸˜ao da mamografia digital
+--- PAGE 2 ---
+pode ser uma tarefa dif´ıcil at´e mesmo para um especialista, uma vez que a an´alise ´e afetada
+por diversos fatores, tais como a qualidade da imagem, experi ˆencia do radiologista, tipo
+de tecido e de les ˜ao [3]. Portanto, o uso de ferramentas computacionais de aux ´ılio ao
+diagn´ostico (CAD) para detecc ¸˜ao de les˜oes pode auxiliar radiologistas a localizar as les˜oes
+e definir suas regi ˜oes de fronteira, fornecendo uma ferramenta adicional ao m ´edico e
+melhorando a precis˜ao do diagn´ostico em imagens de mamografia.
+Abordagens computacionais baseadas em Deep Learning, utilizando Redes Con-
+volutivas (CNN - Convolutional Neural Networks , em ingl ˆes), t ˆem sido aplicadas com
+bastante sucesso em tarefas de classificac ¸˜ao e segmentac ¸˜ao de imagens na ´area m ´edica
+[4, 5]. Em aplicac ¸˜oes de diagn ´ostico de c ˆancer, a interpretabilidade das imagens ´e con-
+seguida atrav´es da localizac ¸˜ao de regi ˜oes da imagem que determinam a classe atribu ´ıda
+pela sa´ıda do modelo [6], auxiliando o diagn ´ostico m´edico. Apesar dos avanc ¸os na´area
+de segmentac ¸˜ao semˆantica em imagens m´edicas, as abordagens existentes ainda s˜ao bas-
+tante dependentes de bases de treino com grande quantidade de imagens e anotac ¸˜oes de
+alta qualidade para que o treino do modelo de segmentac ¸ ˜ao de imagens seja eficiente
+[7]. Contudo, a aquisic ¸˜ao de bases grandes com anotac ¸˜oes ´e um grande desafio na ´area
+m´edica, onde as anotac ¸˜oes de les˜oes requerem o conhecimento especialista para anotar a
+localizac ¸˜ao das les˜oes nos mamogramas, o que torna o processo extremamente trabalhoso
+e custoso [8].
+Dados esses desafios, a ´area de aprendizado fracamente supervisionado tem
+sido bastante estudada nos ´ultimos anos [9, 10], explorando estrat ´egias para extrair
+informac ¸˜oes dos dados com anotac ¸˜oes escarc ¸as ou anotac ¸˜oes fracas [11].Apesar de haver
+n´ıveis diferentes de aprendizagem fracamente supervisionada, neste estudo consideramos
+uma base de dados fracamente anotada como sendo aquela em que as imagens possuem
+anotac ¸˜ao apenas referente `a classe da imagem (normal ou com les˜ao), mas que n˜ao possui
+anotac ¸˜ao referente `a localizac ¸˜ao ou contorno da les˜ao. O uso dessa abordagem torna mais
+acess´ıvel o treinamento das redes convolutivas, tornando mais barato e vi´avel a construc ¸˜ao
+e treinamento em imagens de mamografia, pois tornam o treinamento menos dependente
+da anotac ¸˜ao do especialista em relac ¸˜ao `a localizac ¸˜ao das les ˜oes. Apesar dos avanc ¸os na
+´area de aprendizado fracamente supervisionado, esse ainda ´e um problema em aberto e
+novos estudos buscam aproximar os resultados em relac ¸˜ao aos m´etodos fortemente super-
+visionados.
+M´etodos de treinamento fracamente supervisionados existentes utilizam o m´etodo
+de mapa de ativac ¸˜ao de classe (CAM - Class Activation Map, em inglˆes) [12] para encon-
+trar les ˜oes em imagens de mamografia digital. No entanto, novos m ´etodos baseados em
+mapa de ativac ¸˜ao t ˆem sido propostos nos ´ultimos anos e que n ˜ao foram explorados no
+contexto de detecc ¸˜ao de les˜oes em imagens de mamografia. Neste trabalho, ´e proposto o
+estudo da utilizac ¸˜ao de mapas de ativac ¸˜ao de classe do estado na arte, para detecc ¸˜ao de
+les˜oes, utilizando aprendizado fracamente supervisionado. Para o estudo, comparamos
+os m ´etodos CAM [12], GradCAM [13], GradCAM++ [14], XGradCAM [15] e Layer-
+CAM [16]. Os mapas de ativac ¸˜ao s ˜ao avaliados utilizando o modelo do estado da arte
+GMIC [17], utilizando a base de dados VinDr-Mamo [18]. As principais contribuic ¸˜oes do
+trabalho s˜ao listadas abaixo:
+• Estudo do impacto da utilizac ¸˜ao de diferentes m´etodos de mapa de ativac ¸˜ao apli-
+cados para aprendizado fracamente supervisionado em imagens de mamografia
+--- PAGE 3 ---
+digital;
+• An ´alise de modelo de detecc ¸˜ao de les˜oes na base VinDr-Mammo;
+• Melhoria do modelo do GMIC utilizando diferentes mapas de ativac ¸˜ao para treino
+e teste.
+2. Trabalhos relacionados
+Nos ´ultimos anos, v´arios trabalhos tˆem sido propostos na ´area de aprendizado fracamente
+supervisionado para detecc ¸˜ao de anomalias em imagens de mamografia digital [17]. Os
+principais modelos de detecc ¸˜ao fracamente supervisionados aplicados em imagens de ma-
+mografia se baseiam no m´etodo CAM [12] para realizar a identificac ¸˜ao da regi˜ao de inte-
+resse.
+Shen et al. [6] prop˜oem o modelo GMIC, que utiliza um modelo de rede convolu-
+tiva utilizando caracter´ısticas locais e globais da imagem. Esse modelo primeiro usa uma
+rede de baixa capacidade em toda a imagem para identificar as regi˜oes mais informativas.
+Em seguida, ´e utilizada outra rede de maior capacidade para coletar detalhes das regi ˜oes
+escolhidas. Por fim, ´e utilizado um m ´odulo de fus ˜ao que agrega informac ¸˜oes globais e
+locais para fazer uma previs˜ao. O modelo ´e treinado apenas com informac ¸˜ao de classe da
+imagem e as regi˜oes de interesse s˜ao obtidas utilizando o m´etodo CAM.
+Liu et al. prop ˜oem o m ´etodo GLAM, que ´e uma modificac ¸˜ao do GMIC para
+realizar uma segmentac ¸˜ao refinada usando apenas anotac ¸˜ao a n´ıvel de imagem. A prin-
+cipal ideia do GLAM ´e selecionar regi ˜oes informativas (patches) e em seguida realizar
+a segmentac ¸˜ao em regi˜oes selecionadas. Nessa abordagem tamb ´em ´e utilizado o m´etodo
+CAM para encontrar as regi˜oes de interesse.
+Liang et al. [19] prop˜oem o uso de mapa de ativac ¸˜ao CAM para substituir modelos
+antigos com modelos de atenc ¸˜ao, utilizando tamb´em uma estrat´egia de auto-treinamento,
+que consiste em observar as sa ´ıdas das camadas intermedi ´arias do modelo. Bakalo et
+al. [20] utilizam uma abordagem de janela deslizante, utilizando uma rede VGG pr ´e-
+treinada para identificar regi˜oes de interesse para a classe do problema. Apesar do modelo
+funcionar bem para imagens menores, essa abordagem tem um custo computacional alto
+para grandes bases de dados com imagens de resoluc ¸ ˜ao alta e treinamento de modelos
+profundos.
+Zhu et al [21] realizam a detecc ¸˜ao da regi ˜ao de interesse atrav ´es da gerac ¸˜ao de
+um mapa de caracter ´ısticas reduzido, obtido a partir das camadas de convoluc ¸˜ao e max
+pooling. A identificac ¸˜ao da classe da imagem ´e obtida atrav´es do uso de aprendizado de
+m´ultiplas instˆancias (MIL) [22].
+Fora do contexto de imagens m ´edicas, v ´arios m ´etodos de gerac ¸˜ao de mapas
+de ativac ¸˜ao t ˆem sido propostos para utilizac ¸˜ao em aprendizado fracamente supervisio-
+nado [13, 15, 14, 16]. No entanto, apenas o m ´etodo CAM tem sido utilizado no dom´ınio
+de mamografias digitais. Nosso trabalho realiza a an´alise de diferentes m´etodos baseados
+em CAM, propostos na literatura nos ´ultimos anos, mostrando que o mapa de ativac ¸˜ao
+´e um fator de otimizac ¸˜ao importante no processo de aprendizado fracamente supervisio-
+nado.
+--- PAGE 4 ---
+3. Materiais e M ´etodos
+3.1. M ´etodos de Mapas de Ativac ¸˜ao
+O objetivo da detecc ¸ ˜ao de objeto utilizado aprendizado fracamente supervisionado
+(WSOD - weakly supervised object detection , em ingl ˆes) ´e realizar a identificac ¸˜ao da
+regi˜ao contendo o objeto da imagem dada apenas a classe da imagem, sem nenhum tipo
+de supervis ˜ao a n ´ıvel de pixel. Abordagens de WSOD utilizam m ´etodos baseados em
+mapas de ativac ¸˜ao para gerar a regi ˜ao delimitante do objeto na imagem para os valores
+acima de um limiar definido [23]. A regi˜ao obtida ´e ent˜ao redimensionada para o tamanho
+original da imagem.
+M´etodos baseados em mapas de sali ˆencia tˆem sido propostos na literatura como
+forma tentar explicar a relac ¸˜ao entre regi˜ao da imagem observada pelo modelo e a classe
+presente na imagem [17]. Esses m ´etodos ajudam tanto na explicabilidade dos modelos
+propostos quanto em problemas de aprendizado fracamente supervisionado. M ´etodos de
+saliˆencia baseados em ativac ¸˜ao, tal como o CAM [12] se baseiam em observar a ativac ¸˜ao
+da camada final do modelo para identificar as regi ˜oes respons´aveis pela ativac ¸˜ao de cada
+classe. M ´etodos baseados em ativac ¸˜ao t ˆem sido propostos em tarefas de classificac ¸ ˜ao
+em imagens m´edicas para auxiliar na interpretabilidade dos modelos utilizados [24, 25].
+No contexto de aprendizado fracamente supervisionado aplicado para detecc ¸˜ao de les˜oes
+em imagens de mamografia, apenas a utilizac ¸˜ao do modelo CAM tem sido investigado.
+No entanto, outras abordagens t ˆem sido propostas na literatura nos ´ultimos anos e s ˜ao
+analisados neste trabalho.
+Sejaf uma rede convolutiva com um classificador ec a classe de interesse. Dada
+uma imagem x e uma camada convolutiva li, onde i ´e a i-´esima camada convolutiva de
+f, o mapa de ativac ¸˜ao de classe (CAM) de x em relac ¸˜ao `ac ´e definido pela combinac ¸˜ao
+linear do mapa de ativac ¸˜aoli, como mostrado a seguir [26]:
+CAM c(x) = ReLU
+
+
+NlX
+k=1
+αkAk
+
+, (1)
+ondeNl ´e o n´umero de canais da camada convolutivali,Ak ´e o k-´esimo canal de ativac ¸˜ao,
+αk ´e o peso indicando a import ˆancia da camada de ativac ¸˜ao em relac ¸˜ao `a classe c. A
+func ¸˜ao de ativac ¸˜ao ReLU ´e aplicada para considerar apenas as caracter ´ısticas com in-
+fluˆencia positiva na classe de interesse. Para abordagens baseadas em CAM, normal-
+mente ´e feito um redimensionamento no mapa de ativac ¸˜ao para ser o mesmo do tamanho
+da imagem de entrada. Desta forma, a identificac ¸˜ao da regi ˜ao de interesse pode ser rea-
+lizada atrav´es da multiplicac ¸˜ao do mapa de ativac ¸˜ao pela imagem de entrada. Em redes
+convolutivas com camada de pooling de m´edia global, os valores de αk s˜ao os pesos da
+camada final de classificac ¸˜ao [12]. A Figura 1 ilustra o processo de obtenc ¸ ˜ao do mapa
+de ativac ¸˜ao, onde os pesos da camada final da rede s ˜ao utilizadas para gerar os mapas de
+ativac ¸˜ao.
+O m ´etodo Grad-CAM [27] determina o coeficiente do mapa de ativac ¸˜ao atrav´es
+do c´alculo de m´edia de gradientes em todos os neurˆonios de ativac ¸˜ao do mapa. O M´etodo
+Grad-CAM++ [14] ´e uma vers˜ao modificada do Grad-CAM, em que foca nas influˆencias
+positivas dos neur ˆonios, considerando derivadas de segunda ordem. O m ´etodo XGrad-
+CAM [15] tamb ´em ´e baseado no Grad-CAM, mas escala os gradientes utilizando as
+--- PAGE 5 ---
+CNN
+Mapasde Ativação
+…
+…
+!!
+!"
+!#
+!!∗ +!"∗ +…+!#∗ =
+CAM 
+Figura 1. Mapa de Ativac ¸˜ao CAM. Imagem adaptada de [12].
+ativac ¸˜oes normalizadas. O m ´etodo LayerCAM [16] realiza uma combinac ¸˜ao de mapas
+de ativac ¸˜ao de diferentes camadas. Segundo os autores, as camadas iniciais ajudam a cap-
+turar melhor os detalhes de informac ¸˜ao sobre o objeto (contornos e variac ¸˜ao de contraste),
+enquanto as camadas mais profundas detectam a localizac ¸˜ao dos objetos de interesse.
+3.2. Treinamento
+Para realizar o estudo do trabalho, utilizamos a rede GMIC [17], que ´e o estado da arte
+em WSOD para detecc ¸˜ao de les ˜oes em imagens de mamografia. A Figura 2 mostra o
+funcionamento do modelo GMIC. O treinamento do modelo GMIC possui um modelo
+para extrac ¸˜ao de caracter ´ısticas globais, no m ´odulo global, os quais utilizam o CAM
+para identificar as regi ˜oes de interesse. A partir das regi ˜oes encontradas, ´e utilizado um
+modelo de extrac ¸˜ao de caracter ´ısticas locais, no m ´odulo local, para extrair o vetor de
+caracter´ısticas para cada regi ˜ao. Por fim, o modelo ´e treinado a partir da junc ¸ ˜ao das
+caracter´ısticas locais e globais, no m´odulo de fus˜ao.
+Imagemde entrada
+Rede global
+crop
+Rede local
+Móduloglobal
+Módulolocal
+Módulode fusão
+"!
+""
+FCsigmoid
+#$#$%ã' BCE
+#$"'()" BCE
+#$!"'*)" BCECAM
+Figura 2. Modelo GMIC. Imagem adaptada de [17].
+A func ¸˜ao de perda do modelo GMIC ´e defina pela Equac ¸˜ao 2 [17]:
+L(y, ˆy) =
+X
+c
+BCE (yc, ˆyc
+local) +BCE (yc, ˆyc
+global) +BCE (yc, ˆyc
+f usao) +βLreg(Ac), (2)
+onde BCE ´e a entropia cruzada bin´aria,yc ´e a sa´ıda esperada em relac ¸˜ao `a classec, ˆyc
+local
+´e a sa´ıda observada para o modelo local, ˆyc
+global ´e a sa´ıda observada pelo modelo global,
+ˆyc
+f usao ´e a sa ´ıda observada pelo modelo global ap ´os a fus ˜ao de caracter ´ısticas locais e
+globais,β ´e um coeficiente de regularizac ¸˜ao que utiliza o mapa de ativac ¸˜aoAc, segundo
+a func ¸˜aoLreg. A func ¸˜ao de regularizac ¸˜aoLreg ´e definida porLreg = P
+i,j|Ac
+i,j|, ondei e
+j correspondem `as linhas e colunas do mapa de ativac ¸˜ao.
+--- PAGE 6 ---
+3.3. Ambiente Experimental
+Para a avaliac ¸˜ao do modelo, foi utilizada a base de dados p ´ublica VinDr-Mammo [18].
+A base de dados consiste em 5000 exames de mamograma, onde cada exame possui 4
+imagens associadas, com dois planos (m ´edio-lateral e cranio caudal) para cada mama.
+As imagens da base foram obtidas atrav ´es do m ´etodo de mamografia totalmente digital
+(FFDM - Full-field digital mammography). A base VinDr-Mammo fornece informac ¸˜ao
+de classe da anomalia (massa, calcificac ¸˜ao, assim´etrica, etc) e localizac ¸˜ao. Para o nosso
+trabalho, a informac ¸˜ao de localizac ¸˜ao foi utilizada apenas para validar o modelo. Durante
+o treinamento foi utilizada apenas a classe da imagem. Neste trabalho foram consideradas
+duas classes: normal e massa. A classe normal indica que a imagem n˜ao possui nenhuma
+massa ou les˜ao, enquanto a classe massa indica a presenc ¸a da les˜ao, que pode estar asso-
+ciada ao tumor. Para o conjunto de treinamento foram utilizadas 1978 imagens e para o
+conjunto de teste 474 imagens. Ambos os conjuntos s ˜ao balanceados. A Figura 3 mostra
+imagens da base.
+(a) MLO-D
+ (b) CC-D
+ (c) CC-E
+ (d) MLO-E
+Figura 3. Exemplo de imagens da base VinDr-Mamo. CC-D e CC-E significa vis˜ao
+Cranicaudal da mama direita e esquerda, respectivamente. MLO-D e MLO-
+E correspondem `a vis˜ao mediolateral-obl´ ıqua esquerda e direita, respecti-
+vamente. As imagens s ˜ao retiradas de [18].
+3.4. Implementac ¸˜ao
+As imagens utilizadas da base ViDr-Mamo foram redimensionadas para o tamanho
+2944× 1920 e para o conjunto de treino s ˜ao aplicadas as operac ¸˜oes de aumentado de
+dados b´asicas: flip horizontal, random crop e normalizac ¸˜ao, conforme utilizado em [17].
+Para o conjunto de treino e teste foi uilizada a divis ˜ao disponibilizada pela base, fazendo
+a filtragem das imagens que continham a classe massa e normal. Para o treinamento
+do modelo GMIC, foi utilizado o modelo pr´e-treinado na base NYU Breast Cancer Scree-
+ning [28] e feita a transferˆencia de aprendizado para a base VinDr-Mammo. Para o modelo
+do GMIC, utilizamos uma rede ResNet-22 [29] para o modelo global e uma rede ResNet-
+18 [29] para o modelo local, conforme usado em [17]. O treinamento ´e feito utilizando
+50 ´epocas para treino, valor deβ = 3.26 e tamanho de batch igual a 6. Para o restante dos
+parˆametros do modelo foram utilizados os valores originais utilizados pelos autores. O
+c´odigo foi desenvolvido em Python, utilizando como base o c´odigo fonte disponibilizado
+no github dos autores.
+Para os modelos de mapa de ativac ¸ ˜ao, os modelos GradCAM, GradCAM++,
+--- PAGE 7 ---
+XGradCAM e LayerCAM, foi utilizado como base o c ´odigo dispon´ıvel em [30]. Para
+o modelo CAM foi utilizado o c´odigo original desenvolvido em [17].
+3.5. M ´etricas de A valiac ¸˜ao
+Para a avaliac ¸˜ao do modelo foram utilizadas as m ´etricas de acur ´acia, ´Area sob a curva
+ROC (AUC), Taxa de verdadeiros Positivos (TPR -True Positive Rate, em inglˆes), Taxa de
+verdadeiros Negativos (TNR- True Negative Rate, em inglˆes) e n ´umero de falso positivo
+por imagem (FPPI - False Positive per Image, em inglˆes).
+Para a tarefa de classificac ¸˜ao, n´os utilizamos a ´area sob a curva ROC (AUC), TPR
+E TRN, conforme utilizado na literatura [31, 32]. A m ´etrica de TPR diz a proporc ¸˜ao da
+classe positiva que foi classificada corretamente, enquanto a TRN mostra a classificac ¸˜ao
+correta em relac ¸˜ao `a classe negativa. As m ´etricas TPR e TNR s ˜ao representadas pelas
+equac ¸˜oes 3 e 4 respectivamente:
+TPR = VP
+VP +FN , (3)
+TNR = VN
+VN +FP , (4)
+onde VP, FN, VN e FP, s ˜ao a quantidade verdadeiros positivos, falsos negativos, verda-
+deiros negativos e falsos positivos. Para a an´alise de classificac ¸˜ao um verdadeiro positivo
+acontece quando a classe da imagem ´e de massa e o modelo realiza a predic ¸˜ao correta-
+mente.
+Para a an´alise de detecc ¸˜ao utilizamos as m´etricas TPR e FFPI, conforme utilizado
+na literatura [33, 34]. Para o modelo de detecc ¸˜ao, uma predic ¸˜ao de localizac ¸˜ao ´e conside-
+rada verdadeira positiva quando a intersec ¸˜ao sobre uni˜ao (IoU) das ´areas da regi˜ao predita
+com a regi˜ao ouro ´e maior que 0.3. A m ´etrica de FPPI mede a m´edia de detecc ¸˜oes falso-
+positivas por imagem. O esperado ´e que o modelo maximize a taxa de TPR e minimize a
+taxa de FPPI.
+4. Resultados
+Para a avaliac ¸˜ao do mapas de ativac ¸˜ao foram analisados dois cen´arios utilizando o modelo
+GMIC. No primeiro cen ´ario, foi realizado o treinamento do GMIC original, em que ´e o
+utilizado o m´etodo CAM para obtenc ¸˜ao das regi˜oes de interesse durante o treinamento do
+modelo. Por ´em, durante a fase de teste foram analisados diferentes m ´etodos de mapa de
+ativac ¸˜ao para fazer a inferˆencia da localizac ¸˜ao da regi˜ao de interesse. No segundo cen´ario,
+´e alterado o m´etodo de mapa de ativac ¸˜ao durante o treino e tamb´em na etapa de teste. Para
+ambos os cen ´arios, foram utilizados o mesmo conjunto de treino e teste da base VinDr-
+Mammo. Ap ´os o treinamento do modelo GMIC original, obtemos os valores de m´etricas
+mostrados na Tabela 1.
+Todo o treinamento do modelo foi realizado utilizando apenas informac ¸ ˜ao da
+classe da imagem (i.e. normal ou com massa). Essa an ´alise foi feita para verificar a
+qualidade da classificac ¸˜ao do modelo. Uma acur ´acia de 80% indica que o modelo conse-
+gue classificar corretamente a maioria das imagens. Al´em disso, essa ´e a primeira an´alise
+de um modelo fracamente supervisionado para a base VinDr-Mammo.
+--- PAGE 8 ---
+Tabela 1. Resultados do modelo GMIC treinados na base VinDr-Mammo para
+classificac ¸˜ao das imagens nas classes Normal e Massa.
+Modelo Acur´acia AUC TPR FNR
+GMIC 80.12 87.22 71.88 88.52
+Para realizar a detecc ¸˜ao da regi ˜ao de les ˜ao foram utilizados os modelos CAM,
+GradCAM, GradCAM++, XGradCAM e LayerCAM. Para a avaliac ¸˜ao da qualidade de
+detecc ¸˜ao foram analisadas apenas as imagens de teste contendo massa. A Figura 4 mos-
+tra as segmentac ¸˜oes obtidas por cada m ´etodo para duas imagens da base de teste. A pri-
+meira coluna mostra a imagem original, com a marcac ¸˜ao ouro da localizac ¸˜ao em verde.
+As colunas 2-6 refere-se aos modelos CAM, GradCAM, GracCAM++, XGradCAM e
+LayerCAM, respectivamente.
+Original CAM GradCAM GradCAM++ XGradCAM LayerCAM
+Figura 4. Segmentac ¸˜ao das regi ˜oes de les ˜ao utilizando diferentes m ´etodos de
+mapas de ativac ¸˜ao.
+Pode-se observar pela Figura 4 que apesar de todos os m ´etodos conseguirem en-
+contrar a regi ˜ao de interesse associada `a les˜ao, o m ´etodo CAM tende a gerar mais falso
+positivos, contendo uma ´area maior de regi˜oes segmentadas. No m ´etodo GradCAM essa
+regi˜ao ´e bem menor, mas em algumas imagens pode obter uma regi ˜ao menor do que es-
+perada, em casos de les ˜oes maiores. Apesar dos m ´etodos GradCAM, GradCAM++ e
+XGradCAM apresentarem resultados bem pr ´oximos na Figura 4, quando analisado todo
+o conjunto de testes, h´a uma diferenc ¸a maior entre os m´etodos analisados.
+A Tabela 2 mostra os resultados de TPR@PFFI, que indicam a taxa de TPR com o
+valor de FPPI. Para essas m´etricas foram considerados os maiores valores de TPR obtidos.
+Nos resultados da tabela 2 analisamos diferentes cen´arios de treino e teste. Os modelos de-
+finidos nas linhas GMIC (CAM), GMIC (GradCAM++) e GMIC (XGradCAM) represen-
+tam os resultados do modelo GMIC utilizando os m´etodos CAM, GradCAM++ e XGrad-
+--- PAGE 9 ---
+CAM durante o treino, respectivamente. Os valores das colunas representam os m ´etodos
+de mapa de ativac ¸˜ao utilizados durante o processo de inferˆencia no teste. O modelo GMIC
+original corresponde `a combinac ¸˜ao GMIC(CAM)-CAM. Observando a primeira linha, ve-
+mos que o modelo original GMIC(CAM)-CAM possui a maior taxa de TPR, por ´em com
+um alto valor de FPPI. Quando mudamos o m ´etodo de mapa de ativac ¸˜ao, conseguimos
+reduzir a taxa de FPPI sem reduzir muito o TPR, como quando substitu ´ımos o CAM por
+XGradCAM. Quando treinamos o GMIC utilizando outros m ´etodos de mapa de ativac ¸˜ao
+para encontrar as regi ˜oes de interesse durante o treino, obtemos diferentes resultados na
+fase de teste. Para essa an ´alise, a combinac ¸˜ao GMIC (XgradCAM)-GradCAM++ foi a
+que geral os melhores resultados, considerando uma alta taxa de TPR e FPPI, comparado
+com os outros m´etodos.
+Uma observac ¸˜ao interessante deste estudo ´e que usar m´etodos diferentes nas fases
+de treino e teste pode levar a resultados melhores do que usar apenas um modelo para as
+duas etapas. N ´os acreditamos que isso se deve ao fato de que na fase de treinamento ´e
+mais importante ter menores valores de detecc ¸˜ao com falso positivo, tornando o modelo
+mais confi´avel no processo de obtenc ¸˜ao de regi˜oes para extrair caracter´ısticas. No entanto,
+na fase de testes, utilizar um m ´etodo que gera uma regi ˜ao maior de predic ¸˜ao leva a um
+valor mais alto valor de TPR.
+Al´em disso, conseguimos melhorar o desempenho do modelo GMIC atrav ´es da
+substituic ¸˜ao do m ´etodo CAM durante o treino e utilizac ¸˜ao do modelo GradCAM++ du-
+rante o teste. Com isso conseguimos reduzir a taxa de FPPI de 1.55 para 0.88, aumentando
+a taxa de TPR.
+Tabela 2. Resultados da detecc ¸˜ao de Massas, representado por TPR@FPPI, utili-
+zando diferentes m´etodos de mapa de ativac ¸˜ao.
+M´etodo CAM GradCAM GradCAM++ XGradCAM LayerCAM
+GMIC (CAM) 0.69@1.55 0.60@0.63 0.67@1.43 0.68@1.05 0.68@1.62
+GMIC (GradCAM++) 0.71@2.89 0.13@0.06 0.65@1.12 0.13@0.06 0.67@1.59
+GMIC (XGradCAM) 0.64@0.75 0.60@0.43 0.70@0.88 0.60@0.42 0.72@4.19
+5. Conclus ˜ao
+Este trabalho apresentou um estudo da utilizac ¸ ˜ao de diferentes m ´etodos de mapas de
+ativac ¸˜ao aplicados para detecc ¸˜ao de les˜oes em mamografia digital, utilizando aprendizado
+fracamente supervisionado. O estudo mostrou como a utilizac ¸ ˜ao de diferentes m ´etodos
+de ativac ¸˜ao pode melhorar os resultados do modelo.
+Nos experimentos realizados, conclu ´ımos que a estrat ´egia utilizada de mapa de
+ativac ¸˜ao influencia bastante nas taxas de verdadeiro positivo e de falso positivo por ima-
+gem do modelo. Tamb´em mostramos que a utilizac ¸˜ao de diferentes mapas de ativac ¸˜ao nas
+fases de treino e teste leva a um melhor desempenho na infer ˆencia do modelo, ao inv ´es
+de usar o mesmo m ´etodo em ambas as fases. Com a substituic ¸ ˜ao do m ´etodo CAM no
+treinamento do modelo GMIC pelo m´etodo XGradCAm, e a substituic ¸˜ao na fase de teste
+pelo m´etodo GraCAM++, conseguimos reduzir a taxa de FPPI, aumentando a taxa de FPI
+do modelo.
+--- PAGE 10 ---
+Em trabalhos futuros, iremos explorar o uso da detecc ¸ ˜ao obtida para treinar o
+modelo de forma supervisionado. Tamb ´em pretendemos explorar t ´ecnicas de anotac ¸˜oes
+ruidosas para lidar com as detecc ¸˜oes incorretas durante o treino.
+6. Agradecimentos
+Os autores agradecem `a FACEPE (APQ-1046-1.03/21, BIC-0067-1.03/22) pelo incentivo
+financeiro e apoio `as atividades de pesquisa.
+Referˆencias
+[1] World Health Organization, “Breast cancer screening,” 2017, disponivel em:
+http://www.who.int/cancer/prevention/diagnosis-screening/breast-cancer/en/, aces-
+sado em 08 dez. 2017.
+[2] P. Autier, M. Boniol, R. Middleton, J.-F. Dor´e, C. H´ery, T. Zheng, and A. Gavin, “Advan-
+ced breast cancer incidence following population-based mammographic screening,”
+Annals of Oncology, pp. 600–633, 2011.
+[3] D. S. Deshpande, A. M. Rajurkar, and R. M. Manthalkar, “Medical image analysis an
+attempt for mammogram classification using texture based association rule mining,”
+in Computer Vision, Pattern Recognition, Image Processing and Graphics (NCV-
+PRIPG), 2013 Fourth National Conference on. IEEE, 2013, pp. 1–5.
+[4] M. H. Hesamian, W. Jia, X. He, and P. Kennedy, “Deep learning techniques for medi-
+cal image segmentation: achievements and challenges,” Journal of digital imaging,
+vol. 32, no. 4, pp. 582–596, 2019.
+[5] S. S. Yadav and S. M. Jadhav, “Deep convolutional neural network based medical image
+classification for disease diagnosis,” Journal of Big Data , vol. 6, no. 1, pp. 1–18,
+2019.
+[6] Y . Shen, N. Wu, J. Phang, J. Park, K. Liu, S. Tyagi, L. Heacock, S. G. Kim, L. Moy,
+K. Cho et al., “An interpretable classifier for high-resolution breast cancer screening
+images utilizing weakly supervised localization,” Medical image analysis, vol. 68,
+p. 101908, 2021.
+[7] S.-T. Tran, C.-H. Cheng, T.-T. Nguyen, M.-H. Le, and D.-G. Liu, “Tmd-unet: Triple-
+unet with multi-scale input features and dense skip connection for medical image
+segmentation,” in Healthcare, vol. 9, no. 1. Multidisciplinary Digital Publishing
+Institute, 2021, p. 54.
+[8] X. Xie, J. Chen, Y . Li, L. Shen, K. Ma, and Y . Zheng, “Instance-aware self-supervised
+learning for nuclei segmentation,” in International Conference on Medical Image
+Computing and Computer-Assisted Intervention. Springer, 2020, pp. 341–350.
+[9] A. Diba, V . Sharma, A. Pazandeh, H. Pirsiavash, and L. Van Gool, “Weakly supervised
+cascaded convolutional networks,” inProceedings of the IEEE Conference on Com-
+puter Vision and Pattern Recognition (CVPR), July 2017.
+[10] X. Zhang, Y . Wei, J. Feng, Y . Yang, and T. S. Huang, “Adversarial complementary lear-
+ning for weakly supervised object localization,” in Proceedings of the IEEE confe-
+rence on computer vision and pattern recognition, 2018, pp. 1325–1334.
+--- PAGE 11 ---
+[11] X. Ouyang, Z. Xue, Y . Zhan, X. S. Zhou, Q. Wang, Y . Zhou, Q. Wang, and J.-Z. Cheng,
+“Weakly supervised segmentation framework with uncertainty: A study on pneu-
+mothorax segmentation in chest x-ray,” in International Conference on Medical
+Image Computing and Computer-Assisted Intervention. Springer, 2019, pp. 613–
+621.
+[12] B. Zhou, A. Khosla, A. Lapedriza, A. Oliva, and A. Torralba, “Learning deep features
+for discriminative localization,” inProceedings of the IEEE conference on computer
+vision and pattern recognition, 2016, pp. 2921–2929.
+[13] R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra, “Grad-
+cam: Visual explanations from deep networks via gradient-based localization,” in
+Proceedings of the IEEE international conference on computer vision , 2017, pp.
+618–626.
+[14] A. Chattopadhay, A. Sarkar, P. Howlader, and V . N. Balasubramanian, “Grad-cam++:
+Generalized gradient-based visual explanations for deep convolutional networks,” in
+2018 IEEE winter conference on applications of computer vision (WACV). IEEE,
+2018, pp. 839–847.
+[15] R. Fu, Q. Hu, X. Dong, Y . Guo, Y . Gao, and B. Li, “Axiom-based grad-cam: Towards
+accurate visualization and explanation of cnns,” 2020.
+[16] P.-T. Jiang, C.-B. Zhang, Q. Hou, M.-M. Cheng, and Y . Wei, “Layercam: Exploring
+hierarchical class activation maps for localization,” IEEE Transactions on Image
+Processing, vol. 30, pp. 5875–5888, 2021.
+[17] Y . Shen, N. Wu, J. Phang, J. Park, K. Liu, S. Tyagi, L. Heacock, S. G. Kim, L. Moy,
+K. Cho et al., “An interpretable classifier for high-resolution breast cancer screening
+images utilizing weakly supervised localization,” Medical image analysis, vol. 68,
+p. 101908, 2021.
+[18] H. T. Nguyen, H. Q. Nguyen, H. H. Pham, K. Lam, L. T. Le, M. Dao, and
+V . Vu, “Vindr-mammo: A large-scale benchmark dataset for computer-aided
+diagnosis in full-field digital mammography,” medRxiv, 2022. [Online]. Available:
+https://www.medrxiv.org/content/early/2022/03/10/2022.03.07.22272009
+[19] G. Liang, X. Wang, Y . Zhang, and N. Jacobs, “Weakly-supervised self-training for breast
+cancer localization,” in 2020 42nd Annual International Conference of the IEEE
+Engineering in Medicine & Biology Society (EMBC). IEEE, 2020, pp. 1124–1127.
+[20] R. Bakalo, R. Ben-Ari, and J. Goldberger, “Classification and detection in mammograms
+with weak supervision via dual branch deep neural net,” in 2019 IEEE 16th Inter-
+national Symposium on Biomedical Imaging (ISBI 2019) . IEEE, 2019, pp. 1905–
+1909.
+[21] W. Zhu, Q. Lou, Y . S. Vang, and X. Xie, “Deep multi-instance networks with sparse label
+assignment for whole mammogram classification,” in International conference on
+medical image computing and computer-assisted intervention. Springer, 2017, pp.
+603–611.
+[22] M. Dundar, B. Krishnapuram, R. Rao, and G. Fung, “Multiple instance learning for com-
+puter aided diagnosis,” Advances in neural information processing systems, vol. 19,
+2006.
+--- PAGE 12 ---
+[23] Z. Qin, D. Kim, and T. Gedeon, “Neural network classifier as mutual information estima-
+tor,” https://github.com/ZhenyueQin/Research-Softmax-with-Mutual-Information,
+2021.
+[24] X. Wang, Y . Peng, L. Lu, Z. Lu, M. Bagheri, and R. M. Summers, “Chestx-ray8: Hospital-
+scale chest x-ray database and benchmarks on weakly-supervised classification and
+localization of common thorax diseases,” in Proceedings of the IEEE conference on
+computer vision and pattern recognition, 2017, pp. 2097–2106.
+[25] P. Rajpurkar, J. Irvin, R. L. Ball, K. Zhu, B. Yang, H. Mehta, T. Duan, D. Ding, A. Bagul,
+C. P. Langlotzet al., “Deep learning for chest radiograph diagnosis: A retrospective
+comparison of the chexnext algorithm to practicing radiologists,” PLoS medicine,
+vol. 15, no. 11, p. e1002686, 2018.
+[26] S. Poppi, M. Cornia, L. Baraldi, and R. Cucchiara, “Revisiting the evaluation of class
+activation mapping for explainability: A novel metric and experimental analysis,” in
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-
+nition, 2021, pp. 2299–2304.
+[27] R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra, “Grad-
+cam: Visual explanations from deep networks via gradient-based localization,” in
+Proceedings of the IEEE international conference on computer vision , 2017, pp.
+618–626.
+[28] N. Wu, J. Phang, J. Park, Y . Shen, S. G. Kim, L. Heacock, L. Moy, K. Cho, and K. J.
+Geras, “The nyu breast cancer screening dataset v1. 0,” New York Univ., New York,
+NY, USA, Tech. Rep, 2019.
+[29] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for image recognition,”
+in Proceedings of the IEEE conference on computer vision and pattern recognition,
+2016, pp. 770–778.
+[30] J. Gildenblat and contributors, “Pytorch library for cam methods,” https://github.com/
+jacobgil/pytorch-grad-cam, 2021.
+[31] D. Ribli, A. Horv ´ath, Z. Unger, P. Pollner, and I. Csabai, “Detecting and classifying
+lesions in mammograms with deep learning,” Scientific reports, vol. 8, no. 1, pp.
+1–7, 2018.
+[32] L. Shen, L. R. Margolies, J. H. Rothstein, E. Fluder, R. McBride, and W. Sieh, “Deep
+learning to improve breast cancer detection on screening mammography,”Scientific
+reports, vol. 9, no. 1, pp. 1–12, 2019.
+[33] H. Jung, B. Kim, I. Lee, M. Yoo, J. Lee, S. Ham, O. Woo, and J. Kang, “Detection of mas-
+ses in mammograms using a one-stage object detector based on a deep convolutional
+neural network,” PloS one, vol. 13, no. 9, p. e0203355, 2018.
+[34] R. Agarwal, O. D ´ıaz, M. H. Yap, X. Llad ´o, and R. Mart ´ı, “Deep learning for mass de-
+tection in full field digital mammograms,” Computers in biology and medicine, vol.
+121, p. 103774, 2020.
