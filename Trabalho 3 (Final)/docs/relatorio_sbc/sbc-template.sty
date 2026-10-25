@@ -1,0 +1,80 @@
+%% sbc-template.sty - Estilo Oficial da Sociedade Brasileira de Computação (SBC)
+%% Adaptado para relatórios e artigos científicos da SBC
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sbc-template}[2002/12/04 - SBC LaTeX Package]
+
+\RequirePackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=2cm]{geometry}
+
+% Configuração de Parágrafo e Espaçamento
+\setlength{\parindent}{1.27cm}
+\setlength{\parskip}{0pt}
+
+% Fontes e Títulos
+\def\title#1{\gdef\@title{#1}}
+\def\author#1{\gdef\@author{#1}}
+\def\address#1{\gdef\@address{#1}}
+
+\def\inst#1{$^{#1}$}
+\def\email#1{\\\small\texttt{#1}}
+
+\renewcommand{\maketitle}{
+  \begin{center}
+    {\Large\bfseries \@title \par}
+    \vskip 1.5em
+    {\normalsize\bfseries \@author \par}
+    \vskip 0.8em
+    {\small \@address \par}
+  \end{center}
+  \vskip 1.5em
+}
+
+% Resumo e Abstract
+\renewenvironment{abstract}{%
+  \begin{list}{}{%
+    \setlength{\leftmargin}{0.8cm}%
+    \setlength{\rightmargin}{0.8cm}%
+  }%
+  \item[] \textbf{Resumo.} \itshape \small
+}{%
+  \end{list}
+  \vskip 1em
+}
+
+\newenvironment{abstracten}{%
+  \begin{list}{}{%
+    \setlength{\leftmargin}{0.8cm}%
+    \setlength{\rightmargin}{0.8cm}%
+  }%
+  \item[] \textbf{Abstract.} \itshape \small
+}{%
+  \end{list}
+  \vskip 1em
+}
+
+% Cabeçalhos de Seções formatados conforme normas SBC
+\renewcommand{\section}{\@startsection{section}{1}{\z@}%
+  {-3.5ex \@plus -1ex \@minus -.2ex}%
+  {2.3ex \@plus.2ex}%
+  {\reset@font\bfseries\large}}
+
+\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}%
+  {-3.25ex\@plus -1ex \@minus -.2ex}%
+  {1.5ex \@plus .2ex}%
+  {\reset@font\bfseries\normalsize}}
+
+\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}%
+  {-3.25ex\@plus -1ex \@minus -.2ex}%
+  {1.5ex \@plus .2ex}%
+  {\reset@font\itshape\normalsize}}
+
+% Legendas de Figuras e Tabelas
+\RequirePackage{caption}
+\captionsetup{
+  font={small},
+  labelfont={bf},
+  labelsep=period,
+  justification=centering
+}
+
+\endinput
