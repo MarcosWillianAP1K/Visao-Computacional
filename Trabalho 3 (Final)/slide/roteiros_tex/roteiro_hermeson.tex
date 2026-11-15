@@ -1,0 +1,205 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[brazilian]{babel}
+\usepackage[margin=1.8cm, top=2.0cm, bottom=2.0cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tcolorbox}
+\usepackage{hyperref}
+
+\definecolor{slatebg}{HTML}{F1F5F9}
+\definecolor{slateborder}{HTML}{334155}
+\definecolor{speechbg}{HTML}{EFF6FF}
+\definecolor{speechborder}{HTML}{1D4ED8}
+\definecolor{explainbg}{HTML}{F8FAFC}
+\definecolor{explainborder}{HTML}{64748B}
+\definecolor{qabg}{HTML}{FEFCE8}
+\definecolor{qaborder}{HTML}{CA8A04}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=speechborder,
+    urlcolor=speechborder
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+\newcommand{\slideheader}[3]{%
+    \vspace{10pt}%
+    \begin{tcolorbox}[colback=slateborder, colframe=slateborder, coltext=white, boxrule=0pt, arc=3pt, left=8pt, right=8pt, top=5pt, bottom=5pt]
+        {\large\bfseries #1 — #2}\\[2pt]
+        {\small\itshape Visual no Slide: #3}
+    \end{tcolorbox}%
+}
+
+\newenvironment{falabox}{%
+    \begin{tcolorbox}[colback=speechbg, colframe=speechborder, boxrule=1.2pt, arc=4pt, left=10pt, right=10pt, top=8pt, bottom=8pt, title={\bfseries O QUE VOCÊ DEVE FALAR (Fala Sugerida)}]%
+}{%
+    \end{tcolorbox}%
+}
+
+\newenvironment{explicabox}{%
+    \begin{tcolorbox}[colback=explainbg, colframe=explainborder, boxrule=0.8pt, arc=4pt, left=10pt, right=10pt, top=8pt, bottom=8pt, title={\bfseries ENTENDA O QUE VOCÊ ESTÁ FALANDO (Explicação Didática de Cada Termo)}]%
+}{%
+    \end{tcolorbox}%
+}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries ROTEIRO INDIVIDUAL E GUIA EXPLICATIVO — PARTE 2}\\[6pt]
+    {\Large\bfseries Integrante 2: Hermeson Alves}\\[4pt]
+    {\normalsize\textbf{Responsabilidade:} Slides 07 a 13 (Arquitetura GMIC, Módulos Global/Local/Fusão, Loss e os 5 CAMs)}\\
+    {\small UFPI | CSHNB — Sistemas de Informação — Trabalho Final de Visão Computacional (Tempo estimado: $\sim$6 minutos)}
+\end{center}
+\hrule
+\vspace{6pt}
+
+\subsection*{Visão Geral da Sua Parte}
+Você recebe a palavra do \textbf{Walison Weudes} no Slide 07 e é o responsável pelo \textbf{coração técnico e matemático do trabalho}: explicar de forma clara e didática como o modelo \textbf{GMIC} funciona passo a passo (Rede Global, Seleção Gulosa de Patches, Rede Local MIL, Fusão e Função de Perda), explicar os \textbf{5 métodos de Mapas de Ativação (CAM, Grad-CAM, Grad-CAM++, XGrad-CAM e Layer-CAM)} e revelar \textbf{por que o desacoplamento entre Treino e Teste funciona}, passando a palavra para o \textbf{Marcos Willian} no Slide 14.
+
+% ============================================================================
+\slideheader{SLIDE 07 (Pág. 07/23)}{Divisor Parte 2 — Modelo GMIC e Mapas de Ativação (CAMs)}{Slide divisor de seção com faixa metálica cinza e os 4 eixos da metodologia.}
+
+\begin{falabox}
+``Obrigado, Walison. Nesta segunda parte da apresentação, vamos detalhar como o modelo funciona por dentro: primeiro, como a arquitetura GMIC consegue inspecionar mamografias de quase 6 megapixels sem perder detalhes finos e sem estourar a memória da placa de vídeo; segundo, como operam os módulos Global, Local e de Fusão e sua função de perda multi-ramo; e terceiro, qual é a diferença matemática entre os cinco métodos de mapas de ativação avaliados no artigo.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{6 Megapixels ($2944 \times 1920$ pixels):} Multiplique $2944 \times 1920 = 5.652.480$ pixels por imagem.
+    \item \textbf{VRAM (Memória de Vídeo da GPU):} Quando uma rede neural treina, ela precisa guardar na memória da placa de vídeo todas as ativações de todas as camadas para poder calcular os gradientes no \textit{backpropagation}. Passar uma imagem de $2944 \times 1920$ numa rede pesada comum (como uma ResNet-50 densa) exige dezenas de Gigabytes de VRAM, travando a GPU. O GMIC foi criado exatamente para resolver isso!
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 08 (Pág. 08/23)}{5. Visão Geral do Modelo GMIC (Figura 2 do Artigo)}{Tópicos à esquerda + Print real da Figura 2 do artigo original (Modelo GMIC) à direita.}
+
+\begin{falabox}
+``Aqui no Slide 08 vemos à direita a Figura 2 original do artigo, que ilustra a arquitetura GMIC — sigla para Globally-Aware Multiple Instance Classifier, proposta por Shen et al. em 2021. Qual é a intuição biológica do GMIC? Ele imita exatamente o modo como um médico radiologista analisa uma mamografia na vida real, em duas etapas: na primeira etapa, chamada Visão Panorâmica Global, a rede olha para o exame inteiro em baixa resolução de características apenas para encontrar quais regiões da mama parecem suspeitas, gerando o Mapa de Ativação A. Na segunda etapa, chamada Zoom Focal de Alta Resolução, o modelo usa as coordenadas mais quentes desse mapa para recortar $K = 6$ janelas pequenas de $256 \times 256$ pixels diretamente da imagem original de altíssima resolução, analisa os detalhes finos dessas 6 janelas em uma rede local e, no final, funde a visão global com a visão local.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Analogia do Médico Radiologista (Use isso se quiser explicar fácil!):} Quando o médico olha uma chapa de raio-X grande, primeiro ele olha de longe para a mama inteira procurando alguma mancha suspeita (\textbf{Módulo Global}). Quando ele acha uma mancha, ele pega uma \textbf{lupa de aumento} e olha bem de perto só para aquela mancha em alta definição (\textbf{Módulo Local nos 6 patches}). Depois ele junta o que viu de longe com o que viu na lupa para dar o laudo final (\textbf{Módulo de Fusão}).
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 09 (Pág. 09/23)}{6. Módulo Global (ResNet-22) e Seleção Gulosa de Patches}{Tópicos à esquerda + Print da Figura 2 do artigo à direita.}
+
+\begin{falabox}
+``No Slide 09 detalhamos a primeira metade dessa arquitetura: o Módulo Global e o algoritmo de seleção de patches. A mamografia inteira, de tamanho $1 \times 2944 \times 1920$, entra na Rede Global, que é uma ResNet-22 customizada e leve, com fator de redução espacial (stride total) igual a 32. Ela transforma a imagem em um tensor de características $S_g$ com 512 canais e resolução espacial de $92 \times 60$. Sobre esse tensor, aplicamos o Global Average Pooling (GAP) para gerar o vetor global $\mathbf{h}_{\text{global}}$ de 512 posições e a probabilidade global $\hat{y}_{\text{global}}$. Ao mesmo tempo, o método CAM escolhido combina esses 512 canais em um mapa de calor $A^c$ de $92 \times 60$, normalizado entre 0 e 1. Entra então em ação o algoritmo guloso de seleção de ROIs: em $K = 6$ repetições, ele busca a janela de maior soma de energia no mapa $A^c$, converte essa posição de volta para a escala original de $2944 \times 1920$, recorta um patch de $256 \times 256$ pixels e zera aquela região no mapa $A^c$ — técnica chamada supressão de vizinhança — para garantir que os 6 patches recortem regiões distintas sem se sobrepor.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{ResNet-22 e Stride Total 32:} ``Stride 32'' significa que a altura e a largura da imagem são divididas por 32 ao longo das camadas convolucionais: $2944 \div 32 = 92$ e $1920 \div 32 = 60$. Por isso o tensor final $S_g$ tem tamanho $512 \times 92 \times 60$ ($512$ canais/filtros de tamanho $92 \times 60$).
+    \item \textbf{GAP (\textit{Global Average Pooling}):} Pega cada um dos 512 mapas de tamanho $92 \times 60$ e tira a média simples dos $92 \times 60 = 5.520$ valores, transformando o bloco $512 \times 92 \times 60$ em uma lista (vetor $\mathbf{h}_{\text{global}}$) de 512 números.
+    \item \textbf{Algoritmo Guloso (\textit{Greedy Search}) e Supressão de Vizinhança:} ``Guloso'' significa que ele pega sempre o maior pico disponível naquele momento. Por que ele \textbf{zera a vizinhança} depois de recortar o 1º patch? Porque se ele não zerasse o mapa de calor onde acabou de recortar, os 6 patches seriam recortados exatamente no mesmo lugar! Zerando o ponto já escolhido, o 2º patch é forçado a buscar a segunda região mais suspeita da mama, e assim até $K=6$.
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 10 (Pág. 10/23)}{7. Módulo Local (ResNet-18 MIL), Fusão e Função de Perda (Eq. 2)}{Tópicos no topo + Print real da Equação 2 do artigo original na base.}
+
+\begin{falabox}
+``No Slide 10 vemos o que acontece com os 6 patches recortados. Eles passam pelo Módulo Local, que utiliza uma rede ResNet-18 para extrair um vetor de 512 características de cada patch. Como sabemos qual dos 6 patches realmente contém o tumor se não temos anotação por patch? Usamos o conceito de Multiple Instance Learning — MIL — através de uma operação de Max-Pooling instância a instância: pegamos o valor máximo de cada característica entre os 6 patches para formar o vetor $\mathbf{h}_{\text{local}}$ e a predição $\hat{y}_{\text{local}}$. Em seguida, o Módulo de Fusão concatena o vetor global (512) com o vetor local (512), gerando um vetor de 1024 dimensões que passa por uma camada linear de 256 neurônios, ReLU e Dropout para produzir a predição final $\hat{y}_{\text{fusao}}$. Todo esse conjunto é treinado pela Equação 2 do artigo, exibida no print abaixo: a perda total soma a Entropia Cruzada Binária (BCE) dos três ramos — local, global e fusão — mais o termo $\beta \cdot L_{\text{reg}}(A^c)$, que é a regularização L1 sobre o mapa de ativação com peso $\beta = 3{,}26$.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Multiple Instance Learning (MIL — Aprendizado por Múltiplas Instâncias):} Pense na mamografia como uma ``sacola'' (\textit{bag}) contendo 6 recortes (\textit{instâncias}). Se o exame tem câncer ($y=1$), pelo menos 1 dos 6 recortes tem o tumor; se o exame é normal ($y=0$), nenhum dos 6 recortes tem tumor. O \textbf{Max-Pooling} entre os 6 recortes garante que o sinal do recorte mais suspeito domine o vetor $\mathbf{h}_{\text{local}}$.
+    \item \textbf{BCE (\textit{Binary Cross-Entropy} — Entropia Cruzada Binária):} É a função matemática padrão para medir o erro de classificação entre 0 (Normal) e 1 (Massa). Como o GMIC faz 3 chutes ($\hat{y}_{\text{local}}$, $\hat{y}_{\text{global}}$ e $\hat{y}_{\text{fusao}}$), somamos o erro BCE dos 3 chutes para todos os ramos aprenderem juntos!
+    \item \textbf{O que faz a Regularização L1 ($\beta \cdot L_{\text{reg}}(A^c)$ com $\beta = 3{,}26$)?} A norma L1 soma todos os valores positivos do mapa de calor $A^c$. Ao colocar isso na função de perda (que a rede quer minimizar), a rede recebe uma ``multa'' se acender o mapa de calor na mama inteira! Isso obriga o mapa de calor a ser \textbf{esparso} (apagar todo o fundo saudável e deixar aceso apenas o pedacinho mínimo indispensável para explicar a massa).
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 11 (Pág. 11/23)}{8. Fundamentos dos Mapas de Ativação (CAM — Figura 1 e Eq. 1)}{Print real da Figura 1 e Equação 1 do artigo à esquerda + Tópicos explicativos à direita.}
+
+\begin{falabox}
+``Passando agora para a matemática dos mapas de ativação no Slide 11, temos à esquerda a Figura 1 e a Equação 1 extraídas diretamente do artigo. Como mostra a Equação 1, dado um conjunto de $N_l = 512$ mapas convolucionais $A_k$, o mapa de ativação da classe $c$ é obtido pela soma linear de cada canal $A_k$ multiplicado por um peso de importância $\alpha_k$, seguida da função ReLU. A função ReLU zera todos os valores negativos, porque só nos interessam os pixels que aumentam positivamente a chance de haver uma massa. No método CAM clássico de Zhou et al. (2016), ilustrado na Figura 1, os pesos $\alpha_k$ são simplesmente os pesos fixos da última camada totalmente conectada logo após o Global Average Pooling. Qual é a limitação disso? Como o peso $\alpha_k$ é estático e igual para o canal inteiro, o CAM clássico produz uma mancha de calor muito larga e difusa, que ultrapassa as bordas reais da lesão.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Explicando a Equação 1 ($CAM_c(x) = \text{ReLU}(\sum_{k=1}^{N_l} \alpha_k A_k)$):}
+    \begin{itemize}
+        \item $A_k$: É o $k$-ésimo mapa de características (de tamanho $92 \times 60$), sendo $k$ de $1$ até $512$. Cada um dos 512 canais detecta um padrão visual diferente (bordas, texturas densas, formas circulares, etc.).
+        \item $\alpha_k$: É a ``nota de importância'' daquele canal $k$ para a classe Massa.
+        \item $\text{ReLU}(z) = \max(0, z)$: Se a soma deu negativa naquele pixel (ou seja, aquele pixel indica que a mama é normal), o ReLU transforma em zero. Só ficam acesos os pixels positivos para Massa!
+    \end{itemize}
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 12 (Pág. 12/23)}{9. Evolução: Grad-CAM, Grad-CAM++, XGrad-CAM e Layer-CAM}{Tópicos das 4 variantes de gradiente à esquerda + Painel visual comparativo dos 5 CAMs à direita.}
+
+\begin{falabox}
+``Para superar a limitação do CAM clássico, o artigo avalia quatro métodos mais modernos baseados no gradiente da saída da classe $Y^c$ em relação ao mapa convolucional $A^k$, que comparamos no Slide 12:
+Primeiro, o Grad-CAM (2017): ele calcula $\alpha_k$ como a média espacial simples dos gradientes ($\partial Y^c / \partial A^k_{i,j}$). Na prática em mamografia, ele foca apenas no miolo mais denso da lesão, gerando caixas menores que o tumor real.
+Segundo, o Grad-CAM++ (2018): ele introduz derivadas parciais de segunda e terceira ordem para ponderar cada pixel do gradiente positivo. Com isso, ele consegue expandir o mapa térmico por toda a extensão geométrica da massa, cobrindo muito bem as bordas.
+Terceiro, o XGrad-CAM (2020): derivado dos axiomas matemáticos de Sensibilidade e Conservação, ele pondera cada gradiente pela ativação normalizada da própria célula ($A^k_{i,j} / \sum A^k$). Isso faz dele um excelente filtro seletivo, que elimina picos falsos no fundo da imagem.
+E quarto, o Layer-CAM (2021): em vez de calcular um peso por canal, ele multiplica ponto a ponto cada pixel da ativação pelo ReLU do seu gradiente. Porém, em mamografias densas, essa multiplicação pixel a pixel amplifica ruídos de textura e explode o número de falsos positivos.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{O que é o Gradiente ($\partial Y^c / \partial A^k_{i,j}$)?} Mede a ``sensibilidade'': se eu alterar um pouquinho o valor do pixel $(i,j)$ no canal $k$, o quanto a resposta final da rede para ``Massa'' ($Y^c$) sobe?
+    \item \textbf{Resumo rápido para gravar a personalidade de cada um dos 5 métodos:}
+    \begin{enumerate}
+        \item \textbf{CAM Clássico:} Espalhado demais (borrão grande, gera muitos falsos positivos: $\text{FPPI} = 1{,}55$).
+        \item \textbf{Grad-CAM:} Conservador demais (só acende o miolo central do tumor, caixa fica pequena).
+        \item \textbf{Grad-CAM++:} Expansivo na medida certa no teste (derivadas de 2ª e 3ª ordem preenchem o tumor inteiro!).
+        \item \textbf{XGrad-CAM:} Seletivo e limpo no treino (axiomas matemáticos que focam no centro certo sem pegar ruído de fundo!).
+        \item \textbf{Layer-CAM:} Ruidoso em mamografia (multiplica pixel a pixel e acende qualquer textura branca da mama: $\text{FPPI} = 4{,}19$).
+    \end{enumerate}
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 13 (Pág. 13/23)}{10. Por que Desacoplar o CAM entre Treino e Teste?}{Tópicos e destaque em vermelho à esquerda + Diagrama do fluxo desacoplado à direita.}
+
+\begin{falabox}
+``Chegamos assim ao Slide 13, que responde à pergunta teórica mais importante do trabalho: por que usar XGrad-CAM no treinamento e Grad-CAM++ no teste dá um resultado tão superior?
+Porque a tarefa do mapa de ativação no TREINO é diferente da tarefa dele no TESTE!
+Durante o TREINAMENTO, o mapa de ativação serve apenas para indicar as coordenadas centrais dos $K = 6$ patches de $256 \times 256$ pixels que serão recortados. Não precisamos que o mapa cubra a borda exata da lesão no treino; precisamos apenas que ele não erre o alvo apontando para tecido saudável. O XGrad-CAM é perfeito para o treino porque seus axiomas de conservação suprimem ruídos do parênquima mamário e cravam os patches em cima da lesão.
+Já na etapa de TESTE, precisamos binarizar o mapa térmico para desenhar uma bounding box que cubra pelo menos 30\% da anotação do médico ($\text{IoU} \ge 0{,}3$). Se usarmos o XGrad-CAM no teste, a caixa fica contida demais no miolo ($\text{TPR} = 0{,}60$). Ao trocarmos o extrator de teste para o Grad-CAM++, suas derivadas de segunda e terceira ordem expandem o mapa de calor até as margens completas da massa, subindo o TPR para $0{,}70$ com $\text{FPPI} = 0{,}88$.
+E como destaca a observação em vermelho abaixo: por que não treinar direto com Grad-CAM++? Porque no início do treinamento os pesos da rede ainda não convergiram; calcular derivadas de 2ª e 3ª ordem sobre pesos instáveis gera mapas caóticos que mandam patches errados para a rede local! Passo agora a palavra para o Marcos apresentar os experimentos e resultados na Parte 3.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Dica de Ouro para este Slide:} Este slide é o ponto alto da sua explicação! Se você explicar com clareza essa diferença entre \textbf{Treino = achar o centro dos 6 recortes sem ruído (XGrad-CAM)} vs. \textbf{Teste = cobrir a área inteira do tumor para passar no IoU $\ge 0{,}3$ (Grad-CAM++)}, o professor verá que o grupo compreendeu profundamente a ciência por trás do artigo.
+\end{itemize}
+\end{explicabox}
+
+% ============================================================================
+\section*{Perguntas Prováveis do Professor na Sua Parte (e Como Responder)}
+
+\begin{tcolorbox}[colback=qabg, colframe=qaborder, boxrule=1pt, arc=4pt, title={\bfseries Preparação para Arguição — Parte 2 (Hermeson)}]
+\begin{enumerate}[leftmargin=*, itemsep=6pt]
+    \item \textbf{Professor: ``Para que serve o termo de regularização $\beta \cdot L_{\text{reg}}(A^c)$ na função de perda da Equação 2?''}\\
+    \textbf{Sua Resposta:} ``Ele aplica uma penalidade L1 (soma dos valores absolutos) sobre o mapa de ativação $A^c$, ponderada por $\beta = 3{,}26$. Sem essa penalidade, a rede poderia simplesmente ativar o mapa de calor na mama inteira. A regularização L1 força a esparsidade, obrigando a rede a manter o mapa zerado no fundo saudável e concentrar energia apenas nos pixels estritamente necessários para justificar a presença da massa.''
+
+    \item \textbf{Professor: ``Por que o algoritmo de seleção de patches zera a vizinhança no mapa de ativação a cada iteração?''}\\
+    \textbf{Sua Resposta:} ``Porque os pixels vizinhos ao ponto de máxima ativação também possuem valores muito altos. Se não zerarmos a janela no mapa $A^c$ após extrair o primeiro patch (supressão de vizinhança), as 6 iterações gulosas selecionariam 6 janelas praticamente idênticas sobre o mesmo pico, desperdiçando a capacidade da rede local de inspecionar até 6 regiões suspeitas distintas da mama.''
+
+    \item \textbf{Professor: ``Qual a diferença fundamental entre o CAM tradicional e os métodos baseados em gradiente (Grad-CAM, Grad-CAM++, XGrad-CAM)?''}\\
+    \textbf{Sua Resposta:} ``O CAM tradicional exige uma arquitetura rígida (Global Average Pooling seguido diretamente de uma única camada Linear) porque usa os pesos estáticos dessa camada Linear como coeficientes $\alpha_k$. Já os métodos baseados em gradiente calculam derivadas parciais do escore da classe em relação às ativações da camada convolucional, capturando a importância específica para cada imagem de entrada.''
+\end{enumerate}
+\end{tcolorbox}
+
+\end{document}

@@ -1,0 +1,250 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[brazilian]{babel}
+\usepackage[margin=1.8cm, top=2.0cm, bottom=2.0cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tcolorbox}
+\usepackage{hyperref}
+
+\definecolor{slatebg}{HTML}{F1F5F9}
+\definecolor{slateborder}{HTML}{334155}
+\definecolor{speechbg}{HTML}{EFF6FF}
+\definecolor{speechborder}{HTML}{1D4ED8}
+\definecolor{explainbg}{HTML}{F8FAFC}
+\definecolor{explainborder}{HTML}{64748B}
+\definecolor{qabg}{HTML}{FEFCE8}
+\definecolor{qaborder}{HTML}{CA8A04}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=speechborder,
+    urlcolor=speechborder
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+\newcommand{\slideheader}[3]{%
+    \vspace{10pt}%
+    \begin{tcolorbox}[colback=slateborder, colframe=slateborder, coltext=white, boxrule=0pt, arc=3pt, left=8pt, right=8pt, top=5pt, bottom=5pt]
+        {\large\bfseries #1 — #2}\\[2pt]
+        {\small\itshape Visual no Slide: #3}
+    \end{tcolorbox}%
+}
+
+\newenvironment{falabox}{%
+    \begin{tcolorbox}[colback=speechbg, colframe=speechborder, boxrule=1.2pt, arc=4pt, left=10pt, right=10pt, top=8pt, bottom=8pt, title={\bfseries O QUE VOCÊ DEVE FALAR (Fala Sugerida)}]%
+}{%
+    \end{tcolorbox}%
+}
+
+\newenvironment{explicabox}{%
+    \begin{tcolorbox}[colback=explainbg, colframe=explainborder, boxrule=0.8pt, arc=4pt, left=10pt, right=10pt, top=8pt, bottom=8pt, title={\bfseries ENTENDA O QUE VOCÊ ESTÁ FALANDO (Explicação Didática de Cada Termo)}]%
+}{%
+    \end{tcolorbox}%
+}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries ROTEIRO INDIVIDUAL E GUIA EXPLICATIVO — PARTE 3}\\[6pt]
+    {\Large\bfseries Integrante 3: Marcos Willian}\\[4pt]
+    {\normalsize\textbf{Responsabilidade:} Slides 14 a 23 (Base VinDr-Mammo, Implementação PyTorch, Tabelas 1 e 2, Errata, Figura 4 e Conclusão)}\\
+    {\small UFPI | CSHNB — Sistemas de Informação — Trabalho Final de Visão Computacional (Tempo estimado: $\sim$6 minutos)}
+\end{center}
+\hrule
+\vspace{6pt}
+
+\subsection*{Visão Geral da Sua Parte}
+Você recebe a palavra do \textbf{Hermeson Alves} no Slide 14 e é o responsável por apresentar \textbf{toda a validação experimental, nossa implementação prática em PyTorch, os resultados comparativos do artigo (Figura 3, Tabela 1, Tabela 2 e Figura 4), a auditoria matemática crítica que nosso grupo realizou descobrindo um erro de rotulagem na Tabela 1 original ($\text{FNR}$ vs. $\text{TNR}$)} e fechar a apresentação com as conclusões gerais.
+
+% ============================================================================
+\slideheader{SLIDE 14 (Pág. 14/23)}{Divisor Parte 3 — Base VinDr-Mammo, Resultados e Conclusão}{Slide divisor de seção com faixa metálica cinza.}
+
+\begin{falabox}
+``Obrigado, Hermeson. Nesta terceira e última parte da apresentação, vou mostrar como os experimentos foram estruturados na base pública VinDr-Mammo, como realizamos a nossa implementação em PyTorch, a análise comparativa das Tabelas 1 e 2 e da Figura 4 do artigo, a demonstração de uma errata matemática que identificamos na Tabela 1 original e as conclusões gerais do trabalho.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Objetivo deste slide:} Fazer uma transição limpa entre a teoria do modelo (explicada pelo Hermeson) e os resultados práticos/experimentais que você vai mostrar agora.
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 15 (Pág. 15/23)}{11. Base de Dados VinDr-Mammo e Pré-Processamento (Figura 3)}{Tópicos à esquerda + Print real da Figura 3 do artigo (4 projeções mamográficas) à direita.}
+
+\begin{falabox}
+``No Slide 15 apresentamos a base de dados pública VinDr-Mammo, lançada por Nguyen et al. em 2022. O acervo completo reúne 5.000 exames mamográficos de quatro projeções — totalizando 20.000 imagens no formato DICOM — anotados por consenso de três radiologistas experientes. Na Figura 3 do artigo, reproduzida à direita, vemos um exemplo das quatro vistas padrão de um exame completo: as projeções Médio-Lateral Oblíqua Direita e Esquerda (MLO-D e MLO-E) e as projeções Crânio-Caudal Direita e Esquerda (CC-D e CC-E). Seguindo exatamente o recorte experimental de Sampaio e Cordeiro entre imagens Normais (BI-RADS 1, sem achados) e imagens contendo Massa, o conjunto é balanceado em 50\% para cada classe: são 2.252 imagens para treinamento (1.126 com Massa e 1.126 Normais) e 548 imagens para teste (274 com Massa e 274 Normais). Todas as imagens são redimensionadas para $2944 \times 1920$ pixels, aplicando-se no treino aumento de dados com flip horizontal, random crop e normalização.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{O que são as projeções CC e MLO na Figura 3?} Em todo exame de mamografia, o aparelho tira duas fotos de cada mama (total de 4 fotos por paciente):
+    \begin{itemize}
+        \item \textbf{CC (\textit{Crânio-Caudal}):} Raio-X tirado de cima para baixo (da cabeça em direção aos pés).
+        \item \textbf{MLO (\textit{Médio-Lateral Oblíqua}):} Raio-X tirado em ângulo inclinado lateral, que pega até a região próxima à axila (músculo peitoral).
+        \item \textbf{D e E:} Mama Direita (D) e Mama Esquerda (E).
+    \end{itemize}
+    \item \textbf{Por que a base ser balanceada (50\% Massa / 50\% Normal) é importante?} Porque evita que a rede neural fique viciada na classe majoritária e, além disso, nos permite provar matematicamente a errata da Tabela 1 no Slide 18!
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 16 (Pág. 16/23)}{12. Implementação PyTorch e Protocolo WSOD ($\text{IoU} \ge 0{,}3$)}{Tópicos à esquerda + Saída real gerada pelo nosso pipeline PyTorch à direita.}
+
+\begin{falabox}
+``No Slide 16 detalhamos nossa reprodução em código usando PyTorch 2.x e o protocolo de geração de caixas no teste. Como uma imagem de $2944 \times 1920$ pixels consome muita memória, para reproduzirmos fielmente o batch size igual a 6 do artigo em GPUs de 8 GB de VRAM, implementamos treinamento em precisão mista automática (AMP FP16) aliado à acumulação de gradientes a cada 6 micro-batches, mantendo os mesmos hiperparâmetros do artigo (otimizador Adam, taxa de aprendizado na faixa de $2 \times 10^{-5}$ e $\beta = 3{,}26$ por 30 épocas).
+Na inferência WSOD, como ilustra a saída real gerada pelo nosso código à direita, o mapa de ativação de $92 \times 60$ passa por interpolação bilinear de volta para $2944 \times 1920$ pixels, normalização Min-Max entre 0 e 1, binarização por limiar ($\tau = 0{,}25$) e rotulagem de componentes conexos via OpenCV para extrair o retângulo envolvente de cada região ativa. A caixa predita (tracejada em vermelho) é contabilizada como Verdadeiro Positivo (TP) se sua Interseção sobre União (IoU) com a caixa do radiologista (em verde) for maior ou igual a $0{,}3$; caso contrário, conta como Falso Positivo (FPPI).''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{AMP FP16 (\textit{Automatic Mixed Precision}):} Faz as contas das camadas convolucionais usando números de ponto flutuante de 16 bits em vez de 32 bits, cortando o gasto de memória de vídeo (VRAM) pela metade e acelerando o treino sem perder precisão.
+    \item \textbf{Acumulação de Gradientes (\textit{Gradient Accumulation}):} Em vez de colocar 6 imagens gigantes de uma vez na GPU (o que daria erro de \textit{Out of Memory}), passamos 1 imagem por vez, somamos (acumulamos) os gradientes durante 6 imagens seguidas, e só então atualizamos os pesos da rede (\texttt{optimizer.step()}). Matematicamente, o resultado é idêntico a ter um \textit{batch size} de 6!
+    \item \textbf{Componentes Conexos (\texttt{cv2.connectedComponentsWithStats}):} Depois que transformamos o mapa de calor em uma máscara preta e branca (onde o calor passou do limiar $\tau$, vira branco = 1; onde não passou, vira preto = 0), o algoritmo de componentes conexos encontra cada ``ilha branca'' isolada e tira as coordenadas $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ daquela ilha para desenhar a caixa vermelha!
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 17 (Pág. 17/23)}{13. Resultados de Classificação Global: Normal vs. Massa (Tabela 1)}{Tópicos no topo + Print real da Tabela 1 do artigo original na base.}
+
+\begin{falabox}
+``No Slide 17 apresentamos o print da Tabela 1 do artigo original, que avalia o poder de classificação binária global do ramo de fusão ($\hat{y}_{\text{fusao}}$) — isto é, responder se o exame inteiro é Normal ou possui Massa nas 548 imagens de teste. O modelo GMIC alcançou 80,12\% de Acurácia global, 87,22\% de Área sob a Curva ROC (AUC) e 71,88\% de Taxa de Verdadeiros Positivos (TPR ou Sensibilidade). Isso comprova que a fusão entre o contexto global da ResNet-22 e os 6 patches locais da ResNet-18 atinge alta separabilidade diagnóstica (AUC acima de 87\%). Porém, reparem na última coluna da Tabela 1, impressa no artigo como 'FNR = 88,52\%'. Ao auditarmos matematicamente esses números, descobrimos uma inconsistência importante que explicamos no próximo slide.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{AUC-ROC ($87{,}22\%$):} Mede a qualidade global do classificador variando todos os limiares de decisão possíveis entre 0 e 1 (onde $50\%$ seria um chute aleatório e $100\%$ seria um classificador perfeito). Um AUC de $87{,}22\%$ em mamografia densa é um resultado muito forte!
+    \item \textbf{Gancho para o Slide 18:} Aqui você aponta para o número $88{,}52$ na coluna ``FNR'' da Tabela 1 e já chama a atenção da banca para a auditoria matemática do Slide 18.
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 18 (Pág. 18/23)}{14. Auditoria Crítica: Errata Matemática na Tabela 1 (FNR vs. TNR)}{Demonstração algébrica no topo + Print real da Tabela 1 do artigo na base.}
+
+\begin{falabox}
+``Aqui no Slide 18 demonstramos a auditoria matemática que realizamos sobre a Tabela 1 do artigo. A tabela reporta simultaneamente $\text{Acurácia} = 80{,}12\%$, $\text{TPR} = 71{,}88\%$ e $\text{FNR} = 88{,}52\%$.
+Por definição estatística, nos exames positivos (com Massa), ou o modelo acerta (Verdadeiro Positivo, TPR) ou ele deixa passar a lesão (Falso Negativo, FNR). Ou seja, $\text{FNR} + \text{TPR}$ tem que somar obrigatoriamente $100\%$! Se o $\text{TPR}$ é $71{,}88\%$, a Taxa de Falsos Negativos real do modelo é obrigatoriamente $100\% - 71{,}88\% = 28{,}12\%$, sendo matematicamente impossível um FNR de $88{,}52\%$.
+De onde veio então o valor $88{,}52\%$ na tabela dos autores? Como vimos no Slide 15, o conjunto de teste é perfeitamente balanceado (274 imagens com Massa e 274 Normais). Em qualquer base balanceada 50/50, a Acurácia global é a média aritmética exata entre a Sensibilidade (TPR, acerto na classe Massa) e a Especificidade (TNR, acerto na classe Normal). Se somarmos $\text{TPR} = 71{,}88\%$ com $88{,}52\%$ e dividirmos por 2, obtemos $160{,}40\% / 2 = 80{,}20\%$, que é exatamente a Acurácia de $80{,}12\%$ reportada na primeira coluna (a menos de 1 caso de arredondamento)!
+Provamos assim, de forma algébrica, que o valor $88{,}52\%$ calculado pelos autores é na verdade a Especificidade — True Negative Rate (TNR), com taxa de falsos alarmes globais $\text{FPR} = 11{,}48\%$ — mas o cabeçalho da coluna foi grafado por engano tipográfico como FNR na publicação original.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Entenda essa conta de cabeça (é super simples e impressiona qualquer professor!):}
+    \begin{itemize}
+        \item \textbf{TPR (Sensibilidade):} Das mamografias DOENTES, quantas \% o modelo acertou? $\mathbf{71{,}88\%}$.
+        \item \textbf{FNR (Falsos Negativos):} Das mamografias DOENTES, quantas \% o modelo errou? Tem que ser o que falta para $100\%$: $100\% - 71{,}88\% = \mathbf{28{,}12\%}$.
+        \item \textbf{TNR (Especificidade):} Das mamografias NORMAIS (saudáveis), quantas \% o modelo acertou dizendo que eram normais? $\mathbf{88{,}52\%}$!
+        \item \textbf{Prova Real da Média:} Média entre acerto nas doentes ($71{,}88\%$) e acerto nas normais ($88{,}52\%$): $\frac{71{,}88 + 88{,}52}{2} = \mathbf{80{,}20\%} \approx 80{,}12\%$ (Acurácia da Tabela 1). Ou seja, os autores colocaram a Especificidade (TNR) na tabela, mas escreveram a sigla ``FNR'' por erro de digitação!
+    \end{itemize}
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 19 (Pág. 19/23)}{15. Resultados de Detecção WSOD: Matriz $\text{TPR}@\text{FPPI}$ (Tabela 2)}{Análise da matriz $3\times 5$ no topo + Print real da Tabela 2 do artigo original na base.}
+
+\begin{falabox}
+``Passando agora para a Tabela 2 do artigo no Slide 19, temos o resultado principal de detecção espacial de massas sob $\text{IoU} \ge 0{,}3$, expresso no formato $\text{TPR}@\text{FPPI}$. As linhas mostram qual mapa de ativação foi usado no treinamento da rede GMIC, e as colunas mostram qual mapa foi usado no teste. Destacamos três resultados fundamentais:
+Primeiro, na linha 1 / coluna 1, o baseline GMIC original (treinado com CAM e testado com CAM) atinge $0{,}69@1{,}55$ — ou seja, detecta 69\% das massas, mas gera 1,55 falsos positivos por imagem.
+Segundo, na linha 2, vemos que treinar o GMIC com Grad-CAM++ é altamente instável: quando avaliado no teste com Grad-CAM ou XGrad-CAM, a sensibilidade colapsa para apenas $0{,}13@0{,}06$, e com CAM o FPPI sobe para $2{,}89$.
+Terceiro, na linha 3 / coluna 3 (em negrito na Tabela 2), temos a combinação campeã descoberta no artigo: treinar o GMIC com XGrad-CAM e testar com Grad-CAM++. Ela atinge $0{,}70@0{,}88$, superando o baseline em sensibilidade (de 0,69 para 0,70) e reduzindo a taxa de falsos positivos por imagem em expressivos 43,2\% (baixando de 1,55 para 0,88)!''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Como ler a notação $0{,}70@0{,}88$ na Tabela 2:}
+    \begin{itemize}
+        \item O número \textbf{antes do $@$} ($0{,}70$) é o \textbf{TPR} (Sensibilidade = $70\%$ das massas encontradas). Queremos que seja \textbf{ALTO}.
+        \item O número \textbf{depois do $@$} ($0{,}88$) é o \textbf{FPPI} (Falsos Positivos por Imagem = $0{,}88$ alarmes falsos por exame). Queremos que seja \textbf{BAIXO}.
+        \item Como $(1{,}55 - 0{,}88) \div 1{,}55 = 0{,}67 \div 1{,}55 = 43{,}22\%$, o modelo campeão reduz os falsos positivos em \textbf{43,2\%}!
+    \end{itemize}
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 20 (Pág. 20/23)}{16. Comparação Visual Qualitativa dos 5 CAMs (Figura 4 do Artigo)}{Análise das colunas (a)–(e) à esquerda + Print real da Figura 4 do artigo original à direita.}
+
+\begin{falabox}
+``No Slide 20 trazemos a Figura 4 original do artigo, que mostra visualmente o comportamento dos cinco mapas de ativação no teste para o modelo treinado com XGrad-CAM, onde a caixa verde é a anotação real do médico radiologista e a caixa vermelha é a predição WSOD do modelo:
+Na coluna (a), o CAM clássico gera uma mancha de calor grande demais, que extrapola a lesão ou cria caixas falsas vizinhas.
+Nas colunas (b) Grad-CAM e (d) XGrad-CAM, vemos exatamente o efeito oposto: o calor fica muito concentrado apenas no centro da massa, gerando caixas vermelhas pequenas demais que não atingem os 30\% de IoU exigidos.
+Na coluna (e), o Layer-CAM sofre hiper-fragmentação, acendendo múltiplos falsos positivos no tecido mamário normal, o que explica seu FPPI altíssimo de 4,19 na Tabela 2.
+Já na coluna (c), o Grad-CAM++ apresenta o equilíbrio geométrico ideal: o mapa térmico preenche toda a lesão e a caixa vermelha predita encaixa com alta precisão sobre a caixa verde do especialista.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Por que este slide é ótimo para apresentar?} Porque você só precisa apontar para as 5 colunas da Figura 4 do artigo:
+    \begin{itemize}
+        \item Coluna \textbf{CAM}: Caixa grande/espalhada demais.
+        \item Colunas \textbf{GradCAM} e \textbf{XGradCAM}: Caixa miúda demais (só pega o miolo).
+        \item Coluna \textbf{LayerCAM}: Várias caixas vermelhas erradas espalhadas pela mama.
+        \item Coluna \textbf{GradCAM++} (a do meio): Caixa vermelha casando certinho com a caixa verde do médico!
+    \end{itemize}
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 21 (Pág. 21/23)}{17. Síntese Quantitativa: Trade-off Clínico $\text{TPR} \times \text{FPPI}$ e Ablação}{Tópicos no topo + Gráfico Duplo (Dispersão FROC à esquerda e Barras de Ablação à direita).}
+
+\begin{falabox}
+``No Slide 21 sintetizamos os números da Tabela 2 em dois gráficos comparativos. No Gráfico (a) à esquerda, plotamos a fronteira de decisão clínica entre Sensibilidade (TPR no eixo vertical) e Falsos Positivos por Imagem (FPPI no eixo horizontal). A região sombreada em verde no canto superior esquerdo representa a Zona Clínica Ideal — isto é, pelo menos 70\% de sensibilidade com menos de 1 falso positivo por exame. Reparem que a combinação desacoplada GMIC(XGrad-CAM) com Grad-CAM++ (marcada com a estrela verde em $0{,}70@0{,}88$) é o único método a entrar nessa zona ideal. No Gráfico (b) à direita, vemos a evolução por ablação: trocar apenas o mapa de teste no baseline já reduz o FPPI de 1,55 para 1,43 e 1,05, mas é o desacoplamento completo com XGrad-CAM no treino e Grad-CAM++ no teste que derruba o FPPI para 0,88.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Curva/Espaço FROC (\textit{Free-Response Receiver Operating Characteristic}):} É o gráfico padrão na radiologia que cruza TPR (eixo Y) contra FPPI (eixo X). O melhor modelo possível fica no \textbf{topo à esquerda} (alto TPR e baixo FPPI).
+    \item \textbf{Estudo de Ablação (\textit{Ablation Study}):} Significa trocar uma peça do modelo de cada vez para medir quanto cada peça contribuiu para a melhoria final.
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 22 e SLIDE 23 (Págs. 22/23 e 23/23)}{18. Conclusões Gerais, Contribuições e Encerramento}{Tópicos de conclusão no Slide 22 e Slide final de agradecimento no Slide 23.}
+
+\begin{falabox}
+``Concluindo nossa apresentação no Slide 22, destacamos quatro pontos principais:
+Primeiro, validamos a hipótese científica de Sampaio e Cordeiro (2022), comprovando que desacoplar o mapa seletivo de treinamento (XGrad-CAM) do mapa expansivo de inferência (Grad-CAM++) supera significativamente a arquitetura GMIC tradicional na detecção fracamente supervisionada de massas.
+Segundo, do ponto de vista clínico na base VinDr-Mammo, essa estratégia elevou a sensibilidade para 70\% enquanto reduziu em 43,2\% os falsos positivos por imagem (de 1,55 para 0,88 sob $\text{IoU} \ge 0{,}3$), além de atingir AUC global de 87,22\%.
+Terceiro, entregamos a implementação completa e modularizada em PyTorch viabilizada para GPUs de 8 GB via precisão mista FP16 e acumulação de gradientes, além de formalizarmos algebricamente a errata da Tabela 1 original ($\text{TNR} = 88{,}52\%$).
+E quarto, como trabalhos futuros, apontamos a extensão do pipeline para microcalcificações, a calibração adaptativa do limiar de binarização por densidade mamária BI-RADS e a fusão de múltiplas vistas (CC e MLO).
+(Avança para o Slide 23) Muito obrigado pela atenção de todos! Ficamos à disposição para perguntas.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{O que significa ``Fusão Multi-Visão (CC + MLO)'' nos Trabalhos Futuros?} Atualmente a rede analisa cada imagem (CC ou MLO) separadamente. Como todo exame tem as duas fotos da mesma mama (vista de cima CC e vista de lado MLO), um próximo passo natural é fazer a rede olhar para as duas vistas ao mesmo tempo para confirmar se a massa aparece nas duas projeções!
+\end{itemize}
+\end{explicabox}
+
+% ============================================================================
+\section*{Perguntas Prováveis do Professor na Sua Parte (e Como Responder)}
+
+\begin{tcolorbox}[colback=qabg, colframe=qaborder, boxrule=1pt, arc=4pt, title={\bfseries Preparação para Arguição — Parte 3 (Marcos)}]
+\begin{enumerate}[leftmargin=*, itemsep=6pt]
+    \item \textbf{Professor: ``Como vocês chegaram à conclusão de que a coluna FNR = 88,52\% na Tabela 1 do artigo estava com o rótulo errado?''}\\
+    \textbf{Sua Resposta:} ``Pelas identidades fundamentais da matriz de confusão, professor. Como $\text{FNR} = 1 - \text{TPR}$, um $\text{TPR}$ de $71{,}88\%$ implica obrigatoriamente um $\text{FNR}$ de $28{,}12\%$. Ao verificarmos que o conjunto de teste possui exatamente 50\% de imagens Positivas (274) e 50\% Negativas (274), aplicamos a fórmula da acurácia balanceada $\text{Acc} = (\text{TPR} + \text{TNR})/2$. Substituindo $71{,}88\%$ e $88{,}52\%$, obtivemos $80{,}20\%$, cravando os $80{,}12\%$ da tabela e provando que $88{,}52\%$ é a Especificidade (TNR).''
+
+    \item \textbf{Professor: ``Por que o Layer-CAM teve o maior TPR (0,72), mas não foi escolhido como o melhor método na Tabela 2?''}\\
+    \textbf{Sua Resposta:} ``Porque para atingir $0{,}72$ de TPR, o Layer-CAM gerou um $\text{FPPI}$ de $4{,}19$ — ou seja, mais de 4 alarmes falsos de câncer por mamografia analisada! Isso acontece porque o Layer-CAM multiplica ativação por gradiente pixel a pixel, acendendo várias regiões do tecido fibroglandular denso. Clinicamente, um sistema com mais de 4 falsos positivos por imagem inviabiliza a triagem, enquanto o Grad-CAM++ atinge quase o mesmo TPR ($0{,}70$) com apenas $0{,}88$ de FPPI.''
+
+    \item \textbf{Professor: ``Como o mapa de calor contínuo é transformado em caixas delimitadoras (bounding boxes) na etapa de teste?''}\\
+    \textbf{Sua Resposta:} ``Primeiro redimensionamos o mapa de ativação de $92 \times 60$ para a resolução original de $2944 \times 1920$ via interpolação bilinear e normalizamos seus valores entre 0 e 1 (Min-Max). Depois aplicamos um limiar de binarização $\tau$ e extraímos os componentes conexos da máscara binária; o retângulo envolvente de cada componente conexo forma uma bounding box predita, que é validada contra o Ground Truth se atingir $\text{IoU} \ge 0{,}3$.''
+\end{enumerate}
+\end{tcolorbox}
+
+\end{document}

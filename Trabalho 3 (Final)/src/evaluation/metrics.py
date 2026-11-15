@@ -62,7 +62,7 @@ def evaluate_classification_metrics(y_true: np.ndarray, y_pred_prob: np.ndarray,
     fnr = fn / max(1, (tp + fn)) # Taxa de Falsos Negativos real (1 - TPR)
 
     auc = 0.5
-    if roc_auc_score is not None:
+    if roc_auc_score is not None and len(np.unique(y_true)) > 1:
         try:
             auc = roc_auc_score(y_true, y_pred_prob)
         except Exception:
@@ -108,6 +108,15 @@ def evaluate_wsod_sample(pred_boxes: list, gt_boxes: list, min_iou: float = 0.3)
     return num_tp, num_fp, num_gt
 
 
+CANONICAL_CAM_NAMES = {
+    'cam': 'CAM',
+    'gradcam': 'GradCAM',
+    'gradcam++': 'GradCAM++',
+    'xgradcam': 'XGradCAM',
+    'layercam': 'LayerCAM'
+}
+
+
 def evaluate_dataset_wsod(all_predictions: list, all_ground_truths: list, min_iou: float = 0.3) -> tuple:
     """
     Avalia todo o conjunto de teste para a classe massa:
@@ -130,6 +139,49 @@ def evaluate_dataset_wsod(all_predictions: list, all_ground_truths: list, min_io
     fppi = total_fp / max(1, num_images)
 
     return float(tpr), float(fppi)
+
+
+def evaluate_wsod_threshold_sweep(
+    all_cam_maps: list,
+    all_ground_truths: list,
+    thresholds: list = None,
+    target_shapes: list = None,
+    min_iou: float = 0.3,
+    box_extractor_fn=None
+) -> tuple:
+    """
+    Executa varredura de limiares de binarização tau in [0.1, ..., 0.9] sobre os mapas A^c
+    e seleciona o ponto de operação de maior TPR (menor FPPI em caso de empate),
+    conforme protocolo experimental de Sampaio & Cordeiro (SBC 2022, Seção 4).
+    Retorna: (best_tpr, best_fppi, best_thresh, sweep_history)
+    """
+    if thresholds is None:
+        thresholds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+    best_tpr = -1.0
+    best_fppi = float('inf')
+    best_thresh = 0.3
+    sweep_history = []
+
+    for tau in thresholds:
+        preds_at_tau = []
+        for idx, cam_2d in enumerate(all_cam_maps):
+            t_shape = target_shapes[idx] if target_shapes is not None else None
+            if box_extractor_fn is not None:
+                boxes = box_extractor_fn(cam_2d=cam_2d, threshold=tau, target_shape=t_shape)
+            else:
+                boxes = []
+            preds_at_tau.append(boxes)
+
+        tpr, fppi = evaluate_dataset_wsod(preds_at_tau, all_ground_truths, min_iou=min_iou)
+        sweep_history.append({'threshold': tau, 'tpr': tpr, 'fppi': fppi})
+
+        if (tpr > best_tpr) or (np.isclose(tpr, best_tpr) and fppi < best_fppi):
+            best_tpr = tpr
+            best_fppi = fppi
+            best_thresh = tau
+
+    return float(best_tpr), float(best_fppi), float(best_thresh), sweep_history
 
 
 def format_table_1(results_dict: dict) -> str:

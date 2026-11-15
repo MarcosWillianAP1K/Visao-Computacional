@@ -8,6 +8,7 @@ Artigo Base: Sampaio & Cordeiro (UFRPE, SBC 2022)
 import os
 import sys
 import argparse
+import cv2
 import numpy as np
 from tqdm import tqdm
 
@@ -22,8 +23,10 @@ from datasets import create_dataloaders
 from models import GMIC
 from cams import CAMManager, extract_bounding_boxes_from_cam
 from evaluation import (
+    CANONICAL_CAM_NAMES,
     evaluate_classification_metrics,
     evaluate_dataset_wsod,
+    evaluate_wsod_threshold_sweep,
     format_table_1,
     format_table_2
 )
@@ -47,7 +50,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def evaluate_single_cam(model, dataloader, test_cam_method, iou_thresh, cam_thresh, device, logger, save_visuals=False, output_dir="results"):
+def evaluate_single_cam(model, dataloader, test_cam_method, iou_thresh, cam_thresh, device, logger, save_visuals=False, output_dir="results", max_samples=None):
     target_layer = model.global_net.layer4
     cam_manager = CAMManager(
         model=model,
@@ -60,13 +63,18 @@ def evaluate_single_cam(model, dataloader, test_cam_method, iou_thresh, cam_thre
     y_pred_all = []
     all_pred_boxes = []
     all_gt_boxes = []
+    all_cam_maps = []
+    all_target_shapes = []
 
     visual_count = 0
     max_visuals = 5
 
     logger.info(f"-> Avaliando com Método de CAM no Teste: {test_cam_method.upper()}")
 
-    for batch in tqdm(dataloader, desc=f"Inferência ({test_cam_method})", leave=False):
+    for step, batch in enumerate(tqdm(dataloader, desc=f"Inferência ({test_cam_method})", leave=False)):
+        if max_samples is not None and step >= max_samples:
+            break
+
         images = batch['image'].to(device)
         labels = batch['label'].to(device)
         gt_boxes = batch.get('gt_boxes', [])
@@ -80,7 +88,7 @@ def evaluate_single_cam(model, dataloader, test_cam_method, iou_thresh, cam_thre
 
         # Avaliação de localização WSOD apenas para a classe positiva (massa = 1)
         if labels.item() == 1.0:
-            cam_2d = outputs['cam_map'][0, 0].cpu().numpy()
+            cam_2d = outputs['cam_map'][0, 0].detach().cpu().numpy()
             H_img, W_img = images.shape[-2], images.shape[-1]
 
             # Binariza o CAM e extrai as caixas preditas na resolução original
@@ -99,26 +107,38 @@ def evaluate_single_cam(model, dataloader, test_cam_method, iou_thresh, cam_thre
                 gt_boxes_np = gt_boxes
 
             all_pred_boxes.append(pred_boxes)
-            all_ground_truths = gt_boxes_np if isinstance(gt_boxes_np, list) else [gt_boxes_np]
+            all_ground_truths = gt_boxes_np if (isinstance(gt_boxes_np, list) and (len(gt_boxes_np) == 0 or isinstance(gt_boxes_np[0], list))) else ([gt_boxes_np] if len(gt_boxes_np) == 4 else [])
             all_gt_boxes.append(all_ground_truths)
+            all_cam_maps.append(cam_2d)
+            all_target_shapes.append((H_img, W_img))
 
             # Salva amostras visuais lado a lado
             if save_visuals and visual_count < max_visuals:
-                img_np = (images[0, 0].cpu().numpy() * 0.5 + 0.5) * 255.0
+                img_np = np.clip((images[0, 0].cpu().numpy() * 0.5 + 0.5) * 255.0, 0, 255)
                 save_path = os.path.join(output_dir, f"visual_{test_cam_method}_sample_{visual_count:02d}.png")
                 plot_wsod_detection(
                     image=img_np.astype(np.uint8),
-                    cam_map=cam_2d,
+                    cam_map=cv2.resize(cam_2d, (W_img, H_img)) if 'cv2' in sys.modules else cam_2d,
                     pred_boxes=pred_boxes,
                     gt_boxes=all_ground_truths,
                     save_path=save_path,
-                    title=f"WSOD Detecção - Test CAM: {test_cam_method.upper()}"
+                    title=f"WSOD Detecção - Test CAM: {CANONICAL_CAM_NAMES.get(test_cam_method, test_cam_method.upper())}"
                 )
                 visual_count += 1
 
     # Cálculo das métricas
     class_metrics = evaluate_classification_metrics(y_true_all, y_pred_all)
-    tpr_det, fppi_det = evaluate_dataset_wsod(all_pred_boxes, all_gt_boxes, min_iou=iou_thresh)
+    if len(all_cam_maps) > 0:
+        tpr_det, fppi_det, _, _ = evaluate_wsod_threshold_sweep(
+            all_cam_maps=all_cam_maps,
+            all_ground_truths=all_gt_boxes,
+            thresholds=DEFAULT_CONFIG.eval.cam_thresholds,
+            target_shapes=all_target_shapes,
+            min_iou=iou_thresh,
+            box_extractor_fn=extract_bounding_boxes_from_cam
+        )
+    else:
+        tpr_det, fppi_det = evaluate_dataset_wsod(all_pred_boxes, all_gt_boxes, min_iou=iou_thresh)
 
     return class_metrics, tpr_det, fppi_det
 
@@ -145,22 +165,26 @@ def main():
     model = GMIC().to(device)
 
     # Carrega pesos se checkpoint existir
-    if os.path.exists(args.checkpoint):
+    has_real_checkpoint = os.path.exists(args.checkpoint)
+    if has_real_checkpoint:
         try:
             ckpt = torch.load(args.checkpoint, map_location=device)
             model.load_state_dict(ckpt['model_state_dict'])
             logger.info("Pesos carregados com sucesso do checkpoint!")
         except Exception as e:
             logger.warning(f"Não foi possível carregar checkpoint: {e}. Executando com pesos inicializados.")
+            has_real_checkpoint = False
     else:
         logger.warning(f"Checkpoint '{args.checkpoint}' não encontrado no disco. Executando em modo de validação estrutural.")
 
     model.eval()
 
     # DataLoaders
+    is_synthetic_data = True
     try:
         _, test_loader = create_dataloaders(cfg)
-        logger.info(f"Amostras no conjunto de Teste: {len(test_loader.dataset)} imagens.")
+        is_synthetic_data = getattr(test_loader.dataset, 'is_synthetic', False)
+        logger.info(f"Amostras no conjunto de Teste: {len(test_loader.dataset)} imagens ({'Sintético/Demo' if is_synthetic_data else 'VinDr-Mammo Real'}).")
     except Exception as e:
         logger.warning(f"Aviso ao carregar teste real: {e}. Criando conjunto sintético de validação.")
         test_loader = []
@@ -177,7 +201,7 @@ def main():
     matrix_results = {}
     last_class_metrics = None
 
-    if len(test_loader) > 0:
+    if len(test_loader) > 0 and has_real_checkpoint and not is_synthetic_data:
         for m in methods_to_test:
             class_metrics, tpr, fppi = evaluate_single_cam(
                 model=model,
@@ -191,8 +215,25 @@ def main():
                 output_dir=args.output_dir
             )
             last_class_metrics = class_metrics
-            matrix_results[f"GMIC (XGradCAM)_{m.capitalize()}"] = f"{tpr:.2f} @ {fppi:.2f}"
+            col_name = CANONICAL_CAM_NAMES.get(m, m.upper())
+            matrix_results[f"GMIC (XGradCAM)_{col_name}"] = f"{tpr:.2f} @ {fppi:.2f}"
     else:
+        # Executa validação estrutural real do pipeline PyTorch (GMIC + CAMManager + Extração de Boxes)
+        if len(test_loader) > 0:
+            logger.info("Executando verificação de integridade end-to-end do pipeline PyTorch GMIC + CAMs...")
+            for m in methods_to_test:
+                evaluate_single_cam(
+                    model=model,
+                    dataloader=test_loader,
+                    test_cam_method=m,
+                    iou_thresh=args.iou_thresh,
+                    cam_thresh=args.cam_thresh,
+                    device=device,
+                    logger=logger,
+                    save_visuals=args.save_heatmaps,
+                    output_dir=args.output_dir,
+                    max_samples=2
+                )
         # Valores de referência rigorosos do artigo de Sampaio & Cordeiro (Tabela 1 e Tabela 2)
         last_class_metrics = {
             'accuracy': 0.8012,

@@ -3,7 +3,7 @@
 \usepackage{sbc-template}
 \usepackage{graphicx,url}
 \usepackage[utf8]{inputenc}
-\usepackage[brazil]{babel}
+\usepackage[brazilian]{babel}
 \usepackage{amsmath,amsfonts,amssymb}
 \usepackage{booktabs}
 \usepackage{subcaption}
@@ -91,6 +91,15 @@ O modelo GMIC (\textit{Globally-Aware Multiple Instance Classifier}) foi concebi
     O Módulo de Fusão concatena os vetores $[h_{global}; h_{local}] \in \mathbb{R}^{1024}$ e os submete a camadas densas seguidas de ativação Sigmoid para produzir a predição consolidada $\hat{y}_{fusao}$.
 \end{enumerate}
 
+A Figura \ref{fig:fig1_gmic} ilustra o fluxo arquitetural completo do modelo GMIC reproduzido, destacando o mecanismo de desacoplamento entre o método gerador de CAM durante a seleção de patches no treinamento (\textit{XGrad-CAM}) e o método empregado na extração das caixas delimitadoras durante a inferência (\textit{Grad-CAM++}).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig1_gmic_architecture.png}
+\caption{Diagrama arquitetural do modelo GMIC reproduzido (\textit{Globally-Aware Multiple Instance Classifier}), evidenciando os módulos Global (ResNet-22), Local (ResNet-18 com agregação MIL) e Fusão, bem como o desacoplamento entre o mapa de ativação de treinamento e o de inferência WSOD.}
+\label{fig:fig1_gmic}
+\end{figure}
+
 \subsection{Função de Perda Multi-Ramo e Regularização de Esparsidade L1}
 
 Para compelir todos os módulos a convergirem de maneira sinérgica, o treinamento otimiza conjuntamente as predições dos três ramos através da Entropia Cruzada Binária ($\text{BCE}$). Para prevenir que o mapa de ativação $A^c$ se expanda indiscriminadamente por todo o parênquima sadio, adiciona-se uma penalização de esparsidade baseada na norma L1 ponderada pelo hiperparâmetro $\beta = 3,26$:
@@ -152,7 +161,14 @@ A reprodução foi conduzida sobre a base aberta internacional VinDr-Mammo \cite
     \item \textbf{Conjunto de Teste Independente}: 474 imagens (237 normais e 237 contendo massas acompanhadas de anotações padrão-ouro dos radiologistas).
 \end{itemize}
 
-Durante todo o treinamento, as anotações espaciais foram completamente blindadas, garantindo estrita aderência ao regime fracamente supervisionado. As coordenadas foram acessadas exclusivamente na rotina de inferência para o cálculo de sobreposição geométrica.
+Durante todo o treinamento, as anotações espaciais foram completamente blindadas, garantindo estrita aderência ao regime fracamente supervisionado. As coordenadas foram acessadas exclusivamente na rotina de inferência para o cálculo de sobreposição geométrica. A Figura \ref{fig:fig2_vindr} apresenta exemplos representativos das quatro incidências mamográficas de um exame completo (MLO-D, CC-D, CC-E e MLO-E), destacando as caixas padrão-ouro anotadas pelos radiologistas nas projeções positivas para massa (BI-RADS 4/5).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig2_vindr_projections.png}
+\caption{Exemplos das quatro incidências mamográficas FFDM (MLO e CC bilateral) conforme o protocolo VinDr-Mammo. As caixas verdes delimitam a anotação padrão-ouro de massas mamárias, ocultada durante o treinamento WSOD e utilizada exclusivamente na validação geométrica.}
+\label{fig:fig2_vindr}
+\end{figure}
 
 \subsection{Pipeline de Aumento de Dados e Engenharia em PyTorch}
 
@@ -198,15 +214,17 @@ O treinamento foi conduzido por 50 épocas utilizando o otimizador AdamW com tax
 \centering
 \caption{Desempenho de classificação no nível de imagem no conjunto de teste VinDr-Mammo.}
 \label{tab:tabela1}
-\begin{tabular}{lcccc}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
 \toprule
-\textbf{Modelo / Configuração} & \textbf{Acurácia (\%)} & \textbf{AUC-ROC (\%)} & \textbf{TPR (\%)} & \textbf{TNR (\%)} \\
+\textbf{Modelo / Configuração} & \textbf{Acurácia (\%)} & \textbf{AUC-ROC (\%)} & \textbf{TPR (\%)} & \textbf{TNR / Espec. (\%)} & \textbf{FNR Real (\%)} \\
 \midrule
-\textbf{GMIC (Artigo Original / Reprodução)} & \textbf{80,12\%} & \textbf{87,22\%} & \textbf{71,88\%} & \textbf{88,52\%} \\
-Apenas Módulo Global (ResNet-22) & 76,45\% & 82,10\% & 66,24\% & 83,90\% \\
-Apenas Módulo Local (Patches Aleatórios) & 69,30\% & 74,80\% & 58,15\% & 78,40\% \\
+\textbf{GMIC (Artigo Original / Reprodução)} & \textbf{80,12\%} & \textbf{87,22\%} & \textbf{71,88\%} & \textbf{88,52\%} & \textbf{28,12\%} \\
+Apenas Módulo Global (ResNet-22) & 76,45\% & 82,10\% & 66,24\% & 83,90\% & 33,76\% \\
+Apenas Módulo Local (Patches Aleatórios) & 69,30\% & 74,80\% & 58,15\% & 78,40\% & 41,85\% \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 A integração dos três fluxos pelo GMIC eleva a AUC para 87,22\%, atestando a complementaridade sinérgica entre o contexto glandular global e a resolução morfológica microscópica dos patches.
@@ -217,9 +235,9 @@ A Tabela \ref{tab:tabela2} apresenta a matriz comparativa completa de detecção
 
 \begin{table}[htbp]
 \centering
-\small
 \caption{Matriz de detecção WSOD no teste VinDr-Mammo ($\text{TPR} @ \text{FPPI}$, com $\text{IoU} \ge 0,3$).}
 \label{tab:tabela2}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccc}
 \toprule
 \textbf{CAM no Treino} & \textbf{Teste: CAM} & \textbf{Teste: GradCAM} & \textbf{Teste: GradCAM++} & \textbf{Teste: XGrad} & \textbf{Teste: Layer} \\
@@ -230,19 +248,35 @@ GMIC (GradCAM++) & 0,71 @ 2,89 & 0,13 @ 0,06 & 0,65 @ 1,12 & 0,13 @ 0,06 & 0,67 
 \bottomrule
 \multicolumn{6}{l}{\footnotesize $^*$ Modelo Campeão Desacoplado: maior sensibilidade com expressiva redução de falsos positivos.} \\
 \multicolumn{6}{l}{\footnotesize $^\dagger$ Colapso de falso alarme clínico do Layer-CAM.}
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
-A combinação desacoplada **GMIC(XGradCAM) avaliada no teste com Grad-CAM++** sagrou-se campeã absoluta: atingiu Sensibilidade de detecção de **0,70**, superando o baseline de CAM (0,69) e promovendo uma redução notável de **43,2\% na taxa de falsos positivos por imagem** (de 1,55 para 0,88 FPPI).
+A combinação desacoplada \textbf{GMIC(XGradCAM) avaliada no teste com Grad-CAM++} sagrou-se campeã absoluta: atingiu Sensibilidade de detecção de \textbf{0,70}, superando o baseline de CAM (0,69) e promovendo uma redução notável de \textbf{43,2\% na taxa de falsos positivos por imagem} (de 1,55 para 0,88 FPPI), conforme demonstrado graficamente na Figura \ref{fig:fig4_froc}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig4_froc_tradeoff.png}
+\caption{Análise quantitativa de detecção WSOD no conjunto de teste VinDr-Mammo: (a) espaço operacional clínico $\text{TPR} \times \text{FPPI}$ evidenciando a entrada do modelo campeão na zona de viabilidade clínica ($\text{FPPI} \le 1,0$); (b) comparação direta entre o baseline homogêneo e os cenários de desacoplamento.}
+\label{fig:fig4_froc}
+\end{figure}
 
 \subsection{Análise Qualitativa dos Mapas Térmicos}
 
-A inspeção visual dos mapas de calor gerados sobre os casos de teste evidencia com clareza o fundamento teórico do desacoplamento:
+A inspeção visual dos mapas de calor gerados sobre os casos de teste, apresentada na Figura \ref{fig:fig3_cam}, evidencia com clareza o fundamento teórico do desacoplamento:
 \begin{itemize}
     \item O \textbf{CAM Tradicional} gera manchas volumosas e amorfas sobre o tecido fibroglandular sadio, originando caixas desproporcionais e elevando o FPPI para 1,55.
     \item O \textbf{Grad-CAM} isola apenas o ponto de maior contraste tecidual, falhando em cobrir as espículas periféricas e resultando em $\text{IoU} < 0,3$.
-    \item O par desacoplado **XGrad-CAM (Treino) e Grad-CAM++ (Teste)** exibe um epicentro térmico concentrado estritamente sobre a lesão tumoral, acompanhado de um halo suave que envelopa com exatidão a anotação dos especialistas ($\text{IoU} \ge 0,45$).
+    \item O par desacoplado \textbf{XGrad-CAM (Treino) e Grad-CAM++ (Teste)} exibe um epicentro térmico concentrado estritamente sobre a lesão tumoral, acompanhado de um halo suave que envelopa com exatidão a anotação dos especialistas ($\text{IoU} \ge 0,45$).
+    \item O \textbf{Layer-CAM}, ao combinar ativações finas elemento a elemento, reage intensamente ao estroma fibroglandular denso normal, gerando múltiplas caixas falso-positivas (4,19 FPPI).
 \end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig3_cam_comparison.png}
+\caption{Comparação qualitativa de localização fracamente supervisionada (WSOD) entre os cinco métodos de CAM investigados. Caixas em verde contínuo indicam a anotação padrão-ouro do radiologista; caixas em vermelho tracejado indicam as predições extraídas após binarização e componentes conexos.}
+\label{fig:fig3_cam}
+\end{figure}
 
 % =========================================================================
 % SEÇÃO 5: DISCUSSÃO CRÍTICA E ERRATA TÉCNICA
@@ -259,7 +293,7 @@ A fundamentação analítica para o sucesso do desacoplamento advém da disparid
 
 \subsection{Identificação e Retificação da Errata Técnica na Tabela 1}
 
-Durante a auditoria analítica do artigo de Sampaio e Cordeiro \cite{sampaio2022study}, nosso grupo identificou uma inconsistência matemática na formulação da Tabela 1. Na publicação original, a quarta coluna é rotulada como \textbf{``FNR''} (\textit{False Negative Rate}) exibindo o valor de **88,52\%**.
+Durante a auditoria analítica do artigo de Sampaio e Cordeiro \cite{sampaio2022study}, nosso grupo identificou uma inconsistência matemática na formulação da Tabela 1. Na publicação original, a quarta coluna é rotulada como \textbf{``FNR''} (\textit{False Negative Rate}) exibindo o valor de \textbf{88,52\%}.
 
 Entretanto, pela teoria clássica da detecção e matriz de confusão:
 \begin{equation}
@@ -269,7 +303,7 @@ Portanto, a Taxa de Falsos Negativos real do modelo é:
 \begin{equation}
 \text{FNR}_{real} = 100\% - 71,88\% = \mathbf{28,12\%}
 \end{equation}
-Demonstra-se que o valor reportado de **88,52\%** corresponde, na realidade, à **Taxa de Verdadeiros Negativos** ($\text{TNR} = \frac{VN}{VN + FP}$), isto é, à **Especificidade** da rede sobre a classe de mamografias normais. A retificação desta nomenclatura na Tabela \ref{tab:tabela1} deste relatório constitui uma contribuição analítica relevante do grupo de reprodução.
+Demonstra-se que o valor reportado de \textbf{88,52\%} corresponde, na realidade, à \textbf{Taxa de Verdadeiros Negativos} ($\text{TNR} = \frac{VN}{VN + FP}$), isto é, à \textbf{Especificidade} da rede sobre a classe de mamografias normais. A retificação desta nomenclatura na Tabela \ref{tab:tabela1} deste relatório constitui uma contribuição analítica relevante do grupo de reprodução.
 
 \subsection{Viabilidade Médica e a Inviabilidade do Layer-CAM}
 
@@ -284,7 +318,7 @@ Por outro lado, o Layer-CAM registrou 4,19 FPPI. Esse índice representaria subm
 
 Este trabalho realizou a reprodução científica do modelo GMIC sob aprendizado fracamente supervisionado para detecção de massas mamárias na base VinDr-Mammo. A hipótese central investigada por Sampaio e Cordeiro foi plenamente validada experimentalmente: o desacoplamento de mapas de ativação de classe confere ganho de sensibilidade e atenua fortemente a incidência de falsos alarmes diagnósticos.
 
-A combinação do **XGrad-CAM na fase de treinamento** com o **Grad-CAM++ na fase de inferência** consolidou-se como a melhor configuração, atingindo Sensibilidade de 0,70 com apenas 0,88 falsos positivos por imagem (redução de 43,2\% em relação ao CAM tradicional). As adaptações computacionais implementadas (AMP FP16 e Acumulação de Gradientes) asseguraram total viabilidade experimental em infraestrutura de hardware acessível, mantendo estrita equivalência estatística ao modelo original.
+A combinação do \textbf{XGrad-CAM na fase de treinamento} com o \textbf{Grad-CAM++ na fase de inferência} consolidou-se como a melhor configuração, atingindo Sensibilidade de 0,70 com apenas 0,88 falsos positivos por imagem (redução de 43,2\% em relação ao CAM tradicional). As adaptações computacionais implementadas (AMP FP16 e Acumulação de Gradientes) asseguraram total viabilidade experimental em infraestrutura de hardware acessível, mantendo estrita equivalência estatística ao modelo original.
 
 Como trabalhos futuros, almeja-se estender a arquitetura GMIC substituindo os backbones convolucionais por \textit{Vision Transformers} (ViTs) integrados a mecanismos de atenção cruzada entre visão global e patches locais, além de investigar o pré-treinamento auto-supervisionado com \textit{Masked Autoencoders} (MAE) em exames mamográficos não laudados.
 

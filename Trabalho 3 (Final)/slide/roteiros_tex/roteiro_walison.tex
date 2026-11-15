@@ -1,0 +1,180 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[brazilian]{babel}
+\usepackage[margin=1.8cm, top=2.0cm, bottom=2.0cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tcolorbox}
+\usepackage{hyperref}
+
+\definecolor{slatebg}{HTML}{F1F5F9}
+\definecolor{slateborder}{HTML}{334155}
+\definecolor{speechbg}{HTML}{EFF6FF}
+\definecolor{speechborder}{HTML}{1D4ED8}
+\definecolor{explainbg}{HTML}{F8FAFC}
+\definecolor{explainborder}{HTML}{64748B}
+\definecolor{qabg}{HTML}{FEFCE8}
+\definecolor{qaborder}{HTML}{CA8A04}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=speechborder,
+    urlcolor=speechborder
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+\newcommand{\slideheader}[3]{%
+    \vspace{10pt}%
+    \begin{tcolorbox}[colback=slateborder, colframe=slateborder, coltext=white, boxrule=0pt, arc=3pt, left=8pt, right=8pt, top=5pt, bottom=5pt]
+        {\large\bfseries #1 — #2}\\[2pt]
+        {\small\itshape Visual no Slide: #3}
+    \end{tcolorbox}%
+}
+
+\newenvironment{falabox}{%
+    \begin{tcolorbox}[colback=speechbg, colframe=speechborder, boxrule=1.2pt, arc=4pt, left=10pt, right=10pt, top=8pt, bottom=8pt, title={\bfseries O QUE VOCÊ DEVE FALAR (Fala Sugerida)}]%
+}{%
+    \end{tcolorbox}%
+}
+
+\newenvironment{explicabox}{%
+    \begin{tcolorbox}[colback=explainbg, colframe=explainborder, boxrule=0.8pt, arc=4pt, left=10pt, right=10pt, top=8pt, bottom=8pt, title={\bfseries ENTENDA O QUE VOCÊ ESTÁ FALANDO (Explicação Didática de Cada Termo)}]%
+}{%
+    \end{tcolorbox}%
+}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries ROTEIRO INDIVIDUAL E GUIA EXPLICATIVO — PARTE 1}\\[6pt]
+    {\Large\bfseries Integrante 1: Walison Weudes}\\[4pt]
+    {\normalsize\textbf{Responsabilidade:} Slides 01 a 06 (Contexto Clínico, WSOD, Artigo Base e Resumo da Solução)}\\
+    {\small UFPI | CSHNB — Sistemas de Informação — Trabalho Final de Visão Computacional (Tempo estimado: $\sim$5 minutos)}
+\end{center}
+\hrule
+\vspace{6pt}
+
+\subsection*{Visão Geral da Sua Parte}
+Você é o responsável por \textbf{abrir a apresentação}, contextualizar o problema médico e computacional, explicar de forma simples o que é \textbf{Aprendizado Fracamente Supervisionado (WSOD)}, apresentar o artigo de \textbf{Sampaio \& Cordeiro (2022)} e entregar o \textbf{resumo da solução proposta} antes de passar a palavra para o \textbf{Hermeson Alves} no Slide 07.
+
+% ============================================================================
+\slideheader{SLIDE 01 (Pág. 01/23)}{Capa Oficial da Apresentação}{Faixa metálica cinza com o título do trabalho, nomes do trio e brasão da UFPI.}
+
+\begin{falabox}
+``Olá a todos, boa tarde/noite. Nosso grupo é composto por mim, Walison Weudes, pelo Hermeson Alves e pelo Marcos Willian. Neste trabalho final de Visão Computacional, realizamos a reprodução científica, implementação em PyTorch e auditoria crítica do artigo de Vicente Sampaio e Filipe Cordeiro, publicado em 2022. O estudo investiga o uso de diferentes Mapas de Ativação de Classe — os chamados CAMs — para detectar massas tumorais em exames de mamografia utilizando aprendizado fracamente supervisionado, conhecido pela sigla WSOD.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Massas em Mamografia:} Na radiologia mamária, uma ``massa'' é um nódulo ou caroço tridimensional visível no raio-X da mama. Pode ser benigno (como um cisto) ou maligno (um tumor cancerígeno).
+    \item \textbf{Mapas de Ativação de Classe (CAMs — \textit{Class Activation Maps}):} São ``mapas de calor'' (imagens coloridas do azul ao vermelho) gerados dentro de uma rede neural convolucional. As regiões vermelhas mostram exatamente para quais pixels da imagem a rede neural olhou para tomar sua decisão.
+    \item \textbf{Aprendizado Fracamente Supervisionado (WSOD — \textit{Weakly Supervised Object Detection}):} É uma técnica onde ensinamos a inteligência artificial a \textbf{localizar} onde está um tumor na imagem de teste, mas durante o treinamento damos para a rede \textbf{apenas uma resposta simples de Sim ou Não} (``esta mamografia tem massa'' vs. ``esta mamografia é normal''), sem nunca desenhar um quadrado ao redor do tumor no treinamento.
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 02 (Pág. 02/23)}{Sumário da Apresentação}{Duas colunas listando os tópicos das Partes 1, 2 e 3 divididos entre Walison, Hermeson e Marcos.}
+
+\begin{falabox}
+``Organizamos nossa apresentação em três etapas bem definidas. Nesta Parte 1, apresentarei a motivação clínica na mamografia, o gargalo das anotações médicas, o artigo base que reproduzimos e o resumo da solução proposta. Em seguida, na Parte 2, o Hermeson explicará detalhadamente como funciona a arquitetura híbrida GMIC, sua função de perda e a matemática dos cinco mapas de ativação avaliados. Por fim, na Parte 3, o Marcos apresentará os experimentos na base VinDr-Mammo, nossa reprodução em PyTorch, os resultados comparativos das Tabelas 1 e 2, uma errata matemática importante que descobrimos na Tabela 1 do artigo original e as conclusões do trabalho.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Objetivo deste slide:} Mostrar para a banca que o grupo domina a estrutura lógica do trabalho (Contexto $\to$ Como o Modelo Funciona $\to$ Resultados e Auditoria) e que a divisão entre os três integrantes é equilibrada.
+    \item \textbf{Arquitetura GMIC e Base VinDr-Mammo:} Aqui você apenas cita os nomes para preparar o terreno; quem vai destrinchar o modelo GMIC é o Hermeson (Parte 2) e quem vai destrinchar a base VinDr-Mammo e a errata é o Marcos (Parte 3).
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 03 (Pág. 03/23)}{1. Introdução e Problema Clínico na Mamografia}{Slide de tópicos com faixa metálica cinza explicando os desafios médicos e de resolução.}
+
+\begin{falabox}
+``Começando pela motivação clínica: o câncer de mama é a principal causa de morte por neoplasias em mulheres no mundo, e a mamografia digital de campo total — FFDM — é o exame padrão-ouro para detectar lesões precocemente, antes mesmo de serem palpáveis. Os dois principais sinais radiológicos de alerta são as massas e as microcalcificações. Porém, para um sistema de Visão Computacional, analisar uma mamografia é extremamente difícil por dois motivos: primeiro, a resolução nativa altíssima do exame, que neste estudo é de 2944 por 1920 pixels, onde uma lesão inicial ocupa frequentemente menos de 2\% da área total da imagem; segundo, o problema das mamas densas, onde o tecido fibroglandular saudável aparece branco no raio-X, exatamente igual à massa tumoral, camuflando as bordas da lesão.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Neoplasia:} Nome médico para proliferação anormal de células (tumores benignos ou malignos/câncer).
+    \item \textbf{Mamografia Digital (FFDM — \textit{Full-Field Digital Mammography}):} É o raio-X digital moderno da mama, gravado no formato médico DICOM.
+    \item \textbf{Por que a resolução $2944 \times 1920$ pixels é um problema?} Redes neurais comuns (como ResNet padrão da ImageNet) recebem imagens pequenas de $224 \times 224$ pixels. Uma mamografia de $2944 \times 1920$ tem quase \textbf{6 milhões de pixels} (112 vezes mais pixels!). Se você encolher essa imagem para $224 \times 224$, um tumor pequeno desaparece ou vira um borrão irreconhecível.
+    \item \textbf{Parênquima Fibroglandular / Mamas Densas:} A mama é composta por gordura (que aparece escura/preta no raio-X) e glândulas/fibras (que aparecem brancas/opacas no raio-X). Como os tumores (massas) também são densos e aparecem brancos, em mulheres com mamas densas o tumor fica ``escondido'' no meio do tecido branco normal.
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 04 (Pág. 04/23)}{2. Gargalo da Anotação: Supervisão Total vs. WSOD}{Tópicos contrastando detectores clássicos (Faster R-CNN/YOLO) com o paradigma WSOD.}
+
+\begin{falabox}
+``Isso nos leva ao segundo grande problema: o gargalo da anotação de dados. Modelos tradicionais de detecção de objetos totalmente supervisionados — como Faster R-CNN, YOLO ou U-Net — exigem que médicos radiologistas desenhem manualmente milhares de caixas delimitadoras, as bounding boxes, ao redor de cada lesão para treinar a rede. Na rotina real dos hospitais, nos sistemas PACS, ninguém desenha caixas nos exames; o médico apenas escreve o laudo global dizendo se o exame é Normal ou se possui Massa. É exatamente para resolver isso que usamos o paradigma WSOD — Detecção de Objetos Fracamente Supervisionada. No WSOD, treinamos a rede neural usando apenas o rótulo binário da imagem inteira ($y = 0$ para Normal ou $y = 1$ para Massa), sem nenhuma coordenada espacial no treino. E como descobrimos onde está o tumor no teste? Projetando os Mapas de Ativação de Classe (CAMs) na última camada convolucional da rede.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Supervisão Total (\textit{Fully Supervised}):} Você entrega para a rede no treinamento a imagem $+$ as coordenadas exatas $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ de onde está o tumor. É preciso, mas caríssimo porque exige centenas de horas de médicos especialistas desenhando caixas.
+    \item \textbf{PACS (\textit{Picture Archiving and Communication System}):} É o sistema de banco de dados hospitalar onde ficam guardados os exames de raio-X/mamografia e os laudos em texto dos pacientes.
+    \item \textbf{BI-RADS:} Sistema internacional de pontuação médica da mamografia (de 0 a 6). BI-RADS 1 significa mama 100\% normal; BI-RADS 4 ou 5 indica suspeita de malignidade.
+    \item \textbf{Supervisão Fraca (\textit{Weakly Supervised} — WSOD):} No treinamento, a rede só recebe a imagem $+$ um número simples: $0$ (Normal) ou $1$ (Tem Massa). Ela aprende sozinha a olhar para o tumor para acertar se é $0$ ou $1$. Depois, no teste, olhamos o ``mapa de calor'' (CAM) da rede para desenhar a caixa automaticamente!
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 05 (Pág. 05/23)}{3. O Artigo Base: Sampaio \& Cordeiro (UFRPE, 2022)}{Tópicos à esquerda + Print real do Título, Autores e Abstract do artigo original à direita.}
+
+\begin{falabox}
+``Aqui no Slide 05 temos à direita o print do cabeçalho e do Abstract do artigo original que reproduzimos, de autoria de Vicente Sampaio e Filipe Cordeiro, do Laboratório de Computação Visual da UFRPE. Qual foi a lacuna científica que eles identificaram? Até 2022, os modelos fracamente supervisionados para mamografia — em especial o modelo estado-da-arte chamado GMIC, proposto por Shen et al. em 2021 — utilizavam exclusivamente o método CAM clássico de 2016. O problema é que o CAM clássico gera mapas de calor muito espalhados e borrados ao redor da lesão, o que faz o sistema gerar muitos alarmes falsos — uma taxa de Falsos Positivos por Imagem, ou FPPI, de 1,55. A proposta de Sampaio e Cordeiro foi então implementar e comparar cinco famílias diferentes de mapas de ativação — CAM, Grad-CAM, Grad-CAM++, XGrad-CAM e Layer-CAM — acopladas ao modelo GMIC sobre a base pública VinDr-Mammo.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{Modelo GMIC (\textit{Globally-Aware Multiple Instance Classifier}):} É a arquitetura de rede neural criada na Universidade de Nova York (Shen et al., 2021) especificamente para imagens médicas gigantes. Ela é a ``espinha dorsal'' usada no artigo.
+    \item \textbf{Qual era o defeito do GMIC original?} Ele usava o método CAM antigo (de 2016). Esse CAM antigo espalha muita ``mancha quente'' para fora do tumor, gerando caixas erradas em tecido saudável.
+    \item \textbf{FPPI (\textit{False Positives Per Image} — Falsos Positivos por Imagem):} É uma métrica clínica fundamental. Um $\text{FPPI} = 1{,}55$ significa que, em média, a cada mamografia analisada, o computador aponta \textbf{1,55 tumores falsos} em lugares onde não há doença. Na medicina, quanto \textbf{menor} o FPPI, melhor!
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\slideheader{SLIDE 06 (Pág. 06/23)}{4. Resumo da Solução: Desacoplamento Treino vs. Teste}{Tópicos à esquerda + Diagrama completo da arquitetura GMIC desacoplada à direita.}
+
+\begin{falabox}
+``Para encerrar esta Parte 1 com o resumo da solução proposta no artigo, observem o diagrama à direita: a grande sacada de Sampaio e Cordeiro foi descobrir que o método de mapa de ativação usado durante o TREINAMENTO da rede não precisa ser o mesmo método usado na etapa de TESTE! Como veremos em detalhes a seguir, durante o treinamento o modelo precisa apenas escolher 6 recortes, os patches, focados na lesão; para isso, o método XGrad-CAM é o melhor, pois funciona como um filtro seletivo que ignora o ruído do fundo mamário. Já na hora do teste, quando precisamos desenhar a caixa completa ao redor da massa com sobreposição IoU de pelo menos 30\%, o método Grad-CAM++ é superior, pois usa derivadas de segunda e terceira ordem para expandir o mapa de calor até as bordas reais do tumor. Essa combinação desacoplada — treinar com XGrad-CAM e testar com Grad-CAM++ — elevou a taxa de detecção verdadeira (TPR) para 70\% e reduziu os falsos positivos por imagem em 43,2\%, baixando o FPPI de 1,55 para apenas 0,88. Passo agora a palavra ao Hermeson, que explicará na Parte 2 como a arquitetura GMIC e cada um desses mapas funcionam por dentro.''
+\end{falabox}
+
+\begin{explicabox}
+\begin{itemize}[leftmargin=*, itemsep=4pt]
+    \item \textbf{O que significa ``Desacoplamento Treino vs. Teste''?} Antes deste artigo, todo mundo usava o mesmo mapa de calor no treino e no teste (ex.: treina com CAM e testa com CAM). Os autores descobriram que o modelo funciona muito melhor quando você \textbf{separa (desacopla)} as funções: usa o \textbf{XGrad-CAM no treinamento} (porque ele é super preciso para achar o miolo da lesão sem pegar sujeira do fundo) e troca para o \textbf{Grad-CAM++ no teste} (porque ele espalha o calor até preencher a borda inteira do tumor).
+    \item \textbf{Patches (Recortes):} Pequenas janelas quadradas de $256 \times 256$ pixels recortadas da mamografia grande nos lugares onde o mapa de calor brilhou mais forte.
+    \item \textbf{IoU $\ge 0{,}3$ (\textit{Intersection over Union}):} Mede o quanto a caixa desenhada pela IA se sobrepõe à caixa desenhada pelo médico. Se a sobreposição for de pelo menos $30\%$ ($0{,}3$), o diagnóstico espacial é considerado um acerto!
+    \item \textbf{TPR (\textit{True Positive Rate} — Sensibilidade):} Porcentagem de tumores reais que o modelo conseguiu encontrar ($\text{TPR} = 0{,}70$ significa que ele encontrou $70\%$ das massas).
+\end{itemize}
+\end{explicabox}
+
+\newpage
+% ============================================================================
+\section*{Perguntas Prováveis do Professor na Sua Parte (e Como Responder)}
+
+\begin{tcolorbox}[colback=qabg, colframe=qaborder, boxrule=1pt, arc=4pt, title={\bfseries Preparação para Arguição — Parte 1 (Walison)}]
+\begin{enumerate}[leftmargin=*, itemsep=6pt]
+    \item \textbf{Professor: ``Por que não podemos simplesmente usar YOLO ou Faster R-CNN para detectar massas em mamografia?''}\\
+    \textbf{Sua Resposta:} ``Professor, poderíamos usar se tivéssemos milhares de exames com caixas delimitadoras anotadas por radiologistas. Porém, na prática médica hospitalar, anotar bounding boxes em milhares de mamografias é caro e demorado, enquanto rótulos globais do laudo (Normal vs. Massa) já existem prontos nos sistemas hospitalares. O aprendizado fracamente supervisionado (WSOD) permite localizar a massa no teste treinando apenas com esse rótulo binário global.''
+
+    \item \textbf{Professor: ``Se no treinamento a rede só recebe 0 (Normal) ou 1 (Massa), como ela consegue saber ONDE a massa está na imagem?''}\\
+    \textbf{Sua Resposta:} ``Porque as camadas convolucionais preservam a posição espacial da imagem (num mapa de $92 \times 60$). Para acertar que a imagem é da classe 1 (Massa), os filtros convolucionais precisam ativar fortemente justamente nos pixels onde o nódulo aparece. Quando combinamos esses canais pelos pesos ou gradientes da classe (formando o Mapa de Ativação CAM), a região que mais contribuiu para o rótulo 1 acende no mapa de calor.''
+
+    \item \textbf{Professor: ``Qual é a principal contribuição do artigo de Sampaio e Cordeiro (2022) em relação ao GMIC original de 2021?''}\\
+    \textbf{Sua Resposta:} ``O GMIC original usava apenas o método CAM tradicional tanto no treino quanto no teste, gerando muitos falsos positivos ($\text{FPPI} = 1{,}55$). Sampaio e Cordeiro testaram 5 métodos de mapas de ativação e provaram que desacoplar o método de treino (usando XGrad-CAM para selecionar os patches) do método de teste (usando Grad-CAM++ para segmentar a caixa) reduz os falsos positivos em $43{,}2\%$ ($\text{FPPI} = 0{,}88$) e ainda aumenta o TPR para $0{,}70$.''
+\end{enumerate}
+\end{tcolorbox}
+
+\end{document}

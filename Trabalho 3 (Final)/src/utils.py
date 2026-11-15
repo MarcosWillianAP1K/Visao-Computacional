@@ -88,7 +88,10 @@ def load_checkpoint(checkpoint_path: str, model, optimizer=None, device="cpu"):
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint não encontrado em: {checkpoint_path}")
         
-    checkpoint = torch.load(checkpoint_path, map_location=device)
+    try:
+        checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    except TypeError:
+        checkpoint = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     
     if optimizer and 'optimizer_state_dict' in checkpoint:

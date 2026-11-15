@@ -280,35 +280,34 @@ style: |
   <div class="card">
     <span class="badge">1. RAMO GLOBAL</span>
     <h3 style="margin-top: 6px;">Visão Holística</h3>
-    <ul>
+    <ul style="font-size: 14px;">
       <li><strong>Entrada:</strong> Imagem completa $x$ ($2944 \times 1920$).</li>
       <li><strong>Backbone:</strong> ResNet-22 personalizada.</li>
-      <li>Gera vetor $h_{global}$ e predição global $\hat{y}_{global}$.</li>
-      <li>Produz o mapa de ativação $A^c \in \mathbb{R}^{H_g \times W_g}$.</li>
+      <li>Gera $h_{global} \in \mathbb{R}^{512}$, predição $\hat{y}_{global}$ e mapa $A^c \in \mathbb{R}^{H_g \times W_g}$.</li>
     </ul>
   </div>
   <div class="card">
     <span class="badge">2. EXTRAÇÃO DE PATCHES</span>
     <h3 style="margin-top: 6px;">Seleção Gulosa</h3>
-    <ul>
-      <li>Localiza os $K=6$ picos de calor em $A^c$.</li>
+    <ul style="font-size: 14px;">
+      <li>Localiza os $K=6$ picos térmicos em $A^c$.</li>
       <li>Aplica <strong>supressão de vizinhança</strong> espacial.</li>
-      <li>Recorta $K$ patches ($256 \times 256$) na resolução máxima nativa.</li>
+      <li>Recorta $K=6$ patches ($256 \times 256$) na resolução nativa.</li>
     </ul>
   </div>
   <div class="card">
     <span class="badge">3. RAMO LOCAL & FUSÃO</span>
-    <h3 style="margin-top: 6px;">Detalhamento Fino</h3>
-    <ul>
-      <li><strong>Backbone Local:</strong> ResNet-18 extrai características morfológicas finas.</li>
+    <h3 style="margin-top: 6px;">Detalhamento MIL</h3>
+    <ul style="font-size: 14px;">
+      <li><strong>Backbone Local:</strong> ResNet-18 extrai bordas e espículas.</li>
       <li>Agregação MIL via Max-Pooling $\implies h_{local}$.</li>
-      <li><strong>Módulo de Fusão:</strong> Concatenação $[h_g; h_l] \to \text{FC} \to \hat{y}_{fusao}$.</li>
+      <li><strong>Fusão:</strong> Concatenação $[h_g; h_l] \to \text{FC} \to \hat{y}_{fusao}$.</li>
     </ul>
   </div>
 </div>
 
-<div class="card-accent" style="margin-top: 12px; font-size: 15px;">
-  <strong>Vantagem Estrutural:</strong> Processa gigapixels preservando a resolução nativa da lesão nos patches sem estourar a memória de vídeo.
+<div style="text-align: center; margin-top: 10px;">
+  <img src="assets/fig1_gmic_architecture.png" style="max-height: 235px; border-radius: 6px; border: 1px solid #334155;" alt="Arquitetura GMIC Desacoplada" />
 </div>
 
 ---
@@ -466,26 +465,23 @@ $$\mathcal{L}_{total} = \text{BCE}(y, \hat{y}_{local}) + \text{BCE}(y, \hat{y}_{
 <div class="grid-2">
   <div class="card">
     <h3>Estrutura do Benchmark VinDr-Mammo</h3>
-    <ul>
-      <li>5.000 exames mamográficos (20.000 imagens FFDM DICOM).</li>
-      <li>4 projeções por paciente: <code>CC-D</code>, <code>CC-E</code>, <code>MLO-D</code>, <code>MLO-E</code>.</li>
-      <li>Resolução nativa gigantesca: $2944 \times 1920$ pixels em escala de cinza 16-bit.</li>
-      <li>Anotações independentes com consenso de radiologistas seniores certificados.</li>
+    <ul style="font-size: 14px;">
+      <li>5.000 exames mamográficos (20.000 projeções FFDM DICOM: <code>CC-D</code>, <code>CC-E</code>, <code>MLO-D</code>, <code>MLO-E</code>).</li>
+      <li>Resolução nativa: $2944 \times 1920$ px em escala de cinza com consenso de 3 radiologistas.</li>
+      <li><strong>Partição Experimental Balanceada:</strong> Treino = 1.978 imagens (989 Normais / 989 Massas); Teste = 474 imagens (237 Normais / 237 Massas).</li>
     </ul>
   </div>
   <div class="card-accent">
-    <h3>Protocolo de Isolamento de Supervisão</h3>
-    <ul>
-      <li><strong>Divisão Balanceada:</strong>
-        <ul>
-          <li><strong>Treino:</strong> 1.978 imagens (989 Normais, 989 Massas).</li>
-          <li><strong>Teste:</strong> 474 imagens (237 Normais, 237 Massas).</li>
-        </ul>
-      </li>
-      <li><span class="accent">Isolamento Rigoroso de Coordenadas:</span> Bounding boxes foram completamente ocultadas no treino, sendo acessadas <strong>apenas no teste para cálculo de IoU</strong>.</li>
-      <li><strong>Augmentations:</strong> Flip horizontal ($p=0.5$), corte estocástico e normalização z-score.</li>
+    <h3>Isolamento de Supervisão & Aumento</h3>
+    <ul style="font-size: 14px;">
+      <li><span class="accent">Blindagem Espacial:</span> Bounding boxes ocultadas 100% no treino; lidas apenas no teste para cálculo de $\text{IoU} \ge 0.3$.</li>
+      <li><strong>Augmentations (Seção 3.4):</strong> <code>HorizontalFlip</code> ($p=0.5$), <code>RandomResizedCrop</code> ($[0.85, 1.0]$) e <code>Normalize</code>.</li>
     </ul>
   </div>
+</div>
+
+<div style="text-align: center; margin-top: 8px;">
+  <img src="assets/fig2_vindr_projections.png" style="max-height: 220px; border-radius: 6px; border: 1px solid #334155;" alt="Projeções Mamográficas VinDr-Mammo" />
 </div>
 
 ---
@@ -567,24 +563,17 @@ class GreedyPatchExtractor(nn.Module):
 
 <div class="grid-2">
   <div class="card">
-    <span class="badge">PIPELINE DE LOCALIZAÇÃO</span>
-    <ul>
-      <li>Avaliação executada sobre as <strong>237 imagens de teste com massa</strong>.</li>
-      <li>Binarização do mapa de calor $A^c(x, y)$ por limiar $\tau$:
-        $$\mathcal{M}_{bin}(x, y) = \mathbb{I}(A^c(x, y) \ge \tau)$$
-      </li>
-      <li>Componentes conexos geram as caixas preditas $\mathcal{B}_{pred}$.</li>
+    <span class="badge">PIPELINE DE LOCALIZAÇÃO WSOD</span>
+    <ul style="font-size: 14px;">
+      <li>Avaliação sobre as <strong>237 imagens de teste com massa</strong>.</li>
+      <li>Varredura de binarização $\tau \in [0.1, \dots, 0.9]$: $\mathcal{M}_{bin}(x, y) = \mathbb{I}(A^c(x, y) \ge \tau)$.</li>
+      <li>Componentes conexos extraem as caixas preditas $\mathcal{B}_{pred}$ com máscara anatômica de parênquima.</li>
+      <li><strong>Critério Clínico:</strong> $\text{IoU}(B_{pred}, B_{gt}) \ge 0.3$ (padrão internacional CAD para margens espiculadas).</li>
     </ul>
   </div>
-  <div class="card-accent">
-    <span class="badge">CRITÉRIO CLÍNICO DE SUCESSO</span>
-    <h3>IoU $\ge 0.3$ e FPPI</h3>
-    $$\text{IoU}(B_{pred}, B_{gt}) = \frac{\text{Área}(B_{pred} \cap B_{gt})}{\text{Área}(B_{pred} \cup B_{gt})} \ge 0.3$$
-    <ul>
-      <li><strong>TPR (Sensibilidade):</strong> Fração de tumores reais detectados.</li>
-      <li><strong>FPPI:</strong> Média de falsos alarmes por exame radiológico.</li>
-      <li><strong>Por que IoU 0.3 e não 0.5?</strong> Massas neoplásicas possuem margens difusas e infiltrativas sem bordas rígidas.</li>
-    </ul>
+  <div class="card-accent" style="text-align: center;">
+    <span class="badge">SAÍDA REAL DO PIPELINE (src/test.py)</span>
+    <img src="assets/visual_gradcampp_wsod.png" style="max-height: 250px; width: auto; border-radius: 6px; margin-top: 6px; border: 1px solid #334155;" alt="Detecção WSOD Grad-CAM++" />
   </div>
 </div>
 
@@ -594,7 +583,7 @@ class GreedyPatchExtractor(nn.Module):
 <span class="speaker-badge">Integrante 3 • 17:45 - 19:00</span>
 
 # Resultados da Classificação Global no VinDr-Mammo
-## Desempenho no Nível de Imagem (Tabela 1 do Artigo Original)
+## Desempenho no Nível de Imagem (Tabela 1 do Artigo Original Retificada)
 
 <div class="card">
   <table>
@@ -603,8 +592,9 @@ class GreedyPatchExtractor(nn.Module):
         <th>Modelo / Configuração</th>
         <th>Acurácia (%)</th>
         <th>AUC-ROC (%)</th>
-        <th>TPR / Sensibilidade (%)</th>
+        <th>TPR / Sens. (%)</th>
         <th>Especificidade / TNR (%)</th>
+        <th>FNR Real (%)</th>
       </tr>
     </thead>
     <tbody>
@@ -614,6 +604,7 @@ class GreedyPatchExtractor(nn.Module):
         <td><strong>87,22%</strong></td>
         <td><strong>71,88%</strong></td>
         <td><strong>88,52%</strong></td>
+        <td><strong>28,12%</strong></td>
       </tr>
       <tr>
         <td>Baseline Apenas Global (ResNet-22)</td>
@@ -621,6 +612,7 @@ class GreedyPatchExtractor(nn.Module):
         <td>82,10%</td>
         <td>66,24%</td>
         <td>83,90%</td>
+        <td>33,76%</td>
       </tr>
       <tr>
         <td>Baseline Apenas Local (Patches Aleatórios)</td>
@@ -628,6 +620,7 @@ class GreedyPatchExtractor(nn.Module):
         <td>74,80%</td>
         <td>58,15%</td>
         <td>78,40%</td>
+        <td>41,85%</td>
       </tr>
     </tbody>
   </table>
@@ -710,40 +703,25 @@ class GreedyPatchExtractor(nn.Module):
 <span class="speaker-badge">Integrante 3 • 20:30 - 21:45</span>
 
 # Análise Visual Qualitativa dos Mapas de Calor
-## Comportamento Espacial dos Métodos sobre Mamografias Reais do Teste
+## Comparação Espacial dos 5 Métodos sobre Projeções de Teste (Verde: GT | Vermelho: Predição)
+
+<div style="text-align: center; margin-bottom: 8px;">
+  <img src="assets/fig3_cam_comparison.png" style="max-height: 245px; border-radius: 6px; border: 1px solid #334155;" alt="Comparação Qualitativa dos 5 CAMs" />
+</div>
 
 <div class="grid-3">
   <div class="card">
-    <span class="badge">CAM PADRÃO</span>
-    <h3 style="margin-top: 6px;">Difuso & Ruídos</h3>
-    <ul>
-      <li>Manchas espalhadas pelo parênquima mamário sadio.</li>
-      <li>Gera caixas gigantescas com baixa precisão espacial.</li>
-      <li>FPPI elevado (1.55).</li>
-    </ul>
+    <span class="badge">CAM & LAYER-CAM</span>
+    <p style="font-size: 13px; margin-top: 4px;"><strong>Difusos / Hiper-Reativos:</strong> Ativam estroma fibroglandular sadio, gerando caixas falsas (1.55 e 4.19 FPPI).</p>
   </div>
   <div class="card">
     <span class="badge">GRAD-CAM</span>
-    <h3 style="margin-top: 6px;">Hiper-Concentrado</h3>
-    <ul>
-      <li>Ativa apenas o ponto central de maior contraste.</li>
-      <li>Subestima espículas e bordas neoplásicas.</li>
-      <li>Perde o limiar $\text{IoU} \ge 0.3$.</li>
-    </ul>
+    <p style="font-size: 13px; margin-top: 4px;"><strong>Hiper-Concentrado:</strong> Ativa apenas o núcleo central de maior densidade, subestimando espículas ($\text{IoU} < 0.3$).</p>
   </div>
   <div class="card-accent">
     <span class="badge">XGRAD + GRAD++ 🏆</span>
-    <h3 style="margin-top: 6px;">Equilíbrio Ótimo</h3>
-    <ul>
-      <li>Núcleo limpo sem ativações falsas na periferia.</li>
-      <li>Halo contínuo que cobre o ground truth verde.</li>
-      <li>Bounding box atinge $\text{IoU} \ge 0.45$.</li>
-    </ul>
+    <p style="font-size: 13px; margin-top: 4px;"><strong>Envelopamento Ideal:</strong> Epicentro limpo sem ruído periférico e halo que contorna a lesão ($\text{IoU} \ge 0.45$).</p>
   </div>
-</div>
-
-<div class="card" style="margin-top: 12px; font-size: 14px;">
-  <strong>Interpretação Radiológica:</strong> O radiologista visualiza uma indicação focada e limpa sobre a lesão suspeita, sem distrações causadas por múltiplos alarmes falsos em áreas de tecido mamário fibroso normal.
 </div>
 
 ---
@@ -780,29 +758,19 @@ class GreedyPatchExtractor(nn.Module):
 <span class="speaker-badge">Integrante 3 • 22:45 - 23:30</span>
 
 # Viabilidade Clínica e Trade-Offs de Detecção
-## Por que 0.88 FPPI é Aceitável e 4.19 FPPI é Inutilizável?
+## Por que 0.88 FPPI é Clinicamente Viável e 4.19 FPPI é Inutilizável?
+
+<div style="text-align: center; margin-bottom: 8px;">
+  <img src="assets/fig4_froc_tradeoff.png" style="max-height: 235px; border-radius: 6px; border: 1px solid #334155;" alt="Trade-off Clínico TPR vs FPPI" />
+</div>
 
 <div class="grid-2">
   <div class="card-accent">
-    <h3>O Cenário Clínico Hospitalar</h3>
-    <ul>
-      <li>Um programa de rastreamento avalia de <strong>100 a 300 mamografias/dia</strong> por especialista.</li>
-      <li>Com <strong>0.88 FPPI</strong> (GMIC XGrad-Grad++), o radiologista encontra menos de 1 falso alarme por exame — tolerável como checagem visual.</li>
-      <li>Reduz o tempo de leitura e previne a omissão diagnóstica de carcinomas ocultos.</li>
-    </ul>
+    <p style="font-size: 13.5px; margin: 0;"><strong>Zona Clínica Ideal ($\text{FPPI} \le 1.0$):</strong> Em triagem de 100–300 exames/dia, <strong>0.88 FPPI</strong> gera menos de 1 alarme falso por imagem, prevenindo omissão diagnóstica sem fadiga.</p>
   </div>
   <div class="card-danger">
-    <h3>A Fadiga do Alarme Falso</h3>
-    <ul>
-      <li>Com <strong>4.19 FPPI</strong> (Layer-CAM), o médico recebe mais de 4 caixas falsas em cada exame normal!</li>
-      <li>Gera perda total de credibilidade no sistema CAD.</li>
-      <li>Causa estresse, aumento de tempo de análise e risco de biópsias desnecessárias.</li>
-    </ul>
+    <p style="font-size: 13.5px; margin: 0;"><strong>Fadiga de Alarme (Layer-CAM = 4.19 FPPI):</strong> Mais de 800 caixas falsas/dia sobre mamas sadias, induzindo perda de credibilidade no CAD e biópsias desnecessárias.</p>
   </div>
-</div>
-
-<div class="card" style="margin-top: 10px; font-size: 15px; text-align: center;">
-  <strong>Conclusão Técnica:</strong> A métrica isolada de TPR não define um sistema CAD. A relação $\text{TPR} / \text{FPPI}$ é o verdadeiro critério de viabilidade médica.
 </div>
 
 ---

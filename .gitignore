@@ -1,0 +1,34 @@
+# Pesos de redes neurais e checkpoints pesados (PyTorch)
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.h5
+*.bin
+**/checkpoints/
+
+# Cache do Python e ambientes virtuais
+**/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Arquivos temporarios de compilacao LaTeX
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Imagens e arquivos temporarios de apoio aos slides e testes sinteticos
+**/slide/paper_prints/
+**/slide/assets/
+**/slide/roteiros_tex/*.pdf
+**/src/results/*.png
+*.pptx

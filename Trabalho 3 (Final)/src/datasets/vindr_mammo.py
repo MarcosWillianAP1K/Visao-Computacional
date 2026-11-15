@@ -61,9 +61,46 @@ def read_mammogram_image(file_path: str) -> np.ndarray:
         return img
 
 
+def generate_synthetic_mammogram(target_size: tuple, boxes: list, seed: int = 42) -> np.ndarray:
+    """
+    Gera um fantoma mamográfico sintético realista (parênquima + massa hiperdensa nas caixas GT)
+    para validação estrutural e demonstração quando a base real de 20GB não está no disco local.
+    """
+    rng = np.random.default_rng(seed)
+    h, w = target_size
+    img = np.zeros((h, w), dtype=np.float32)
+
+    # Contorno anatômico semielíptico da mama (projeção MLO/CC lateral esquerda)
+    yy, xx = np.ogrid[:h, :w]
+    cy, cx = h * 0.52, 0.0
+    ry, rx = h * 0.42, w * 0.68
+    breast_mask = (((yy - cy) / ry) ** 2 + ((xx - cx) / rx) ** 2) <= 1.0
+
+    # Textura fibroglandular suave
+    radial_grad = np.clip(1.0 - np.sqrt(((yy - cy) / ry) ** 2 + ((xx - cx) / rx) ** 2), 0.0, 1.0)
+    img[breast_mask] = 45.0 + 95.0 * (radial_grad[breast_mask] ** 0.7)
+
+    # Ruído estrutural de baixa frequência (parênquima)
+    small_noise = rng.normal(0.0, 12.0, size=(max(8, h // 32), max(8, w // 32))).astype(np.float32)
+    smooth_noise = cv2.resize(small_noise, (w, h), interpolation=cv2.INTER_CUBIC)
+    img[breast_mask] = np.clip(img[breast_mask] + smooth_noise[breast_mask], 10.0, 210.0)
+
+    # Insere massa hiperdensa nas coordenadas das bounding boxes (se classe positiva)
+    for box in boxes:
+        xmin, ymin, xmax, ymax = box
+        mcx, mcy = 0.5 * (xmin + xmax), 0.5 * (ymin + ymax)
+        mrx, mry = max(8.0, 0.5 * (xmax - xmin)), max(8.0, 0.5 * (ymax - ymin))
+        dist2 = ((xx - mcx) / mrx) ** 2 + ((yy - mcy) / mry) ** 2
+        mass_profile = np.exp(-1.5 * dist2) * (dist2 <= 2.2)
+        img = np.clip(img + 115.0 * mass_profile, 0.0, 255.0)
+
+    return img.astype(np.uint8)
+
+
 def get_transforms(split: str = 'train', target_size: tuple = (2944, 1920)):
     """
-    Retorna pipeline de transformações Albumentations.
+    Retorna pipeline de transformações Albumentations fiel a Sampaio & Cordeiro (Seção 3.4):
+    Redimensionamento (2944 x 1920), Flip Horizontal, Random Crop e Normalização.
     """
     if A is None or ToTensorV2 is None:
         return None
@@ -74,7 +111,13 @@ def get_transforms(split: str = 'train', target_size: tuple = (2944, 1920)):
         return A.Compose([
             A.Resize(height=h, width=w, interpolation=cv2.INTER_AREA),
             A.HorizontalFlip(p=0.5),
-            A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.4),
+            A.RandomResizedCrop(
+                size=(h, w),
+                scale=(0.90, 1.0),
+                ratio=(w / h * 0.95, w / h * 1.05),
+                interpolation=cv2.INTER_AREA,
+                p=0.5
+            ),
             A.Normalize(mean=(0.5,), std=(0.5,)),
             ToTensorV2()
         ], bbox_params=A.BboxParams(format='albumentations', min_visibility=0.1, label_fields=['bbox_classes']))
@@ -101,12 +144,13 @@ class VinDrMammoDataset(Dataset):
         transform=None
     ):
         super().__init__()
-        if not os.path.exists(metadata_csv):
+        self.is_synthetic = not os.path.exists(metadata_csv)
+        if self.is_synthetic:
             # Gera DataFrame sintético se o arquivo não existir (para dry-run/testes estruturais)
             self.df = pd.DataFrame({
                 'image_id': [f"img_{i:04d}" for i in range(10)],
                 'label': [0 if i % 2 == 0 else 1 for i in range(10)],
-                'boxes': ["[]" if i % 2 == 0 else "[[100, 150, 400, 450]]" for i in range(10)]
+                'boxes': ["[]" if i % 2 == 0 else "[[250, 1100, 620, 1480]]" for i in range(10)]
             })
         else:
             self.df = pd.read_csv(metadata_csv)
@@ -122,20 +166,6 @@ class VinDrMammoDataset(Dataset):
     def __getitem__(self, idx: int) -> dict:
         row = self.df.iloc[idx]
         image_id = str(row['image_id'])
-        
-        # Localiza o arquivo de imagem (tenta png, jpg, dcm)
-        img_name = f"{image_id}.png"
-        img_path = os.path.join(self.images_dir, img_name)
-        if not os.path.exists(img_path):
-            img_path = os.path.join(self.images_dir, f"{image_id}.dicom")
-            
-        if os.path.exists(img_path):
-            image = read_mammogram_image(img_path)
-        else:
-            # Imagem de preenchimento caso arquivo real ainda não tenha sido baixado
-            image = np.zeros((self.target_size[0], self.target_size[1]), dtype=np.uint8)
-            
-        h_orig, w_orig = image.shape
         label = float(row.get('label', 0.0))
         
         # Parse das bounding boxes de especialistas (se presentes)
@@ -149,6 +179,20 @@ class VinDrMammoDataset(Dataset):
             parsed_boxes = raw_boxes
         else:
             parsed_boxes = []
+
+        # Localiza o arquivo de imagem (tenta png, jpg, dcm)
+        img_name = f"{image_id}.png"
+        img_path = os.path.join(self.images_dir, img_name)
+        if not os.path.exists(img_path):
+            img_path = os.path.join(self.images_dir, f"{image_id}.dicom")
+            
+        if os.path.exists(img_path):
+            image = read_mammogram_image(img_path)
+        else:
+            # Fantoma mamográfico sintético realista caso a base real ainda não tenha sido baixada
+            image = generate_synthetic_mammogram(self.target_size, parsed_boxes if label == 1.0 else [], seed=42 + idx)
+            
+        h_orig, w_orig = image.shape
 
         # Aplica transformações
         if self.transform is not None:
@@ -229,12 +273,15 @@ def create_dataloaders(config) -> tuple:
         is_test=True
     )
     
+    has_cuda = torch.cuda.is_available() if torch else False
+    eff_workers = 0 if (os.name == 'nt' or train_dataset.is_synthetic or not has_cuda) else config.train.num_workers
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=config.train.batch_size,
         shuffle=True,
-        num_workers=config.train.num_workers,
-        pin_memory=torch.cuda.is_available() if torch else False,
+        num_workers=eff_workers,
+        pin_memory=has_cuda,
         drop_last=True
     )
     
@@ -242,8 +289,8 @@ def create_dataloaders(config) -> tuple:
         test_dataset,
         batch_size=1,  # Teste WSOD opera individualmente por imagem
         shuffle=False,
-        num_workers=config.train.num_workers,
-        pin_memory=torch.cuda.is_available() if torch else False
+        num_workers=eff_workers,
+        pin_memory=has_cuda
     )
     
     return train_loader, test_loader

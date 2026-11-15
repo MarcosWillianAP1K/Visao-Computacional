@@ -138,6 +138,10 @@ class GMIC(nn.Module if torch else object):
             nn.Linear(dim_fusion, 1)
         )
 
+        if torch is not None:
+            nn.init.constant_(self.fc_global.weight, 1.0 / dim_global)
+            nn.init.zeros_(self.fc_global.bias)
+
     def forward(self, x, cam_generator=None):
         """
         x: [Batch, 1, H, W]

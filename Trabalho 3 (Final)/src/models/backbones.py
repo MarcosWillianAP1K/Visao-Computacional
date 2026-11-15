@@ -80,6 +80,7 @@ class ResNet22Global(nn.Module if torch else object):
 
         # Global Average Pooling para geração do vetor de características global
         self.gap = nn.AdaptiveAvgPool2d((1, 1))
+        self.last_layer3_map = None
 
         # Inicialização Kaiming Normal
         self._initialize_weights()
@@ -118,6 +119,7 @@ class ResNet22Global(nn.Module if torch else object):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
+        self.last_layer3_map = x
         feat_map = self.layer4(x) # S_g: [Batch, 512, H_g, W_g]
 
         h_global = self.gap(feat_map) # [Batch, 512, 1, 1]
